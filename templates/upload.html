@@ -1,36 +1,69 @@
+
 {% extends "base.html" %}
 
 {% block title %}Upload de Arquivos - {{ super() }}{% endblock %}
 
-{% block header %}Upload de Fatura/Extrato{% endblock %}
-
 {% block content %}
-<div class="card">
-    <form id="uploadForm" enctype="multipart/form-data">
-        
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    Upload de Fatura/Extrato
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label for="file" class="form-label">
+                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>
+                            Selecionar arquivo CSV
+                        </label>
+                        <div class="file-input-wrapper">
+                            <input 
+                                type="file" 
+                                id="file" 
+                                name="file" 
+                                accept=".csv"
+                                required
+                            >
+                            <label for="file" class="file-input-label" id="fileLabel">
+                                <i class="bi bi-cloud-upload-fill fs-1 text-muted mb-2 d-block"></i>
+                                <span class="fs-5">Clique aqui ou arraste seu arquivo CSV</span>
+                                <br>
+                                <small class="text-muted">Arquivos suportados: .csv</small>
+                            </label>
+                        </div>
+                        <div id="fileName" class="mt-2"></div>
+                    </div>
 
-        <div class="form-group">
-            <label for="file">Selecionar arquivo (.csv):</label>
-            <div class="file-input-wrapper">
-                <input 
-                    type="file" 
-                    id="file" 
-                    name="file" 
-                    class="file-input" 
-                    accept=".csv"
-                    required
-                >
-                <label for="file" class="file-input-label">
-                    Escolher arquivo
-                </label>
-                <div class="file-name" id="fileName"></div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="bi bi-upload me-2"></i>
+                            Importar Arquivo
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <md-filled-button id="submitBtn" type="submit">
-            Importar
-        </md-filled-button>
-    </form>
+        <!-- Info Card -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Instruções
+                </h6>
+                <ul class="mb-0">
+                    <li>O arquivo deve estar no formato CSV</li>
+                    <li>Transações duplicadas serão automaticamente ignoradas</li>
+                    <li>Transações que necessitam revisão serão enviadas para a aba "Pendentes"</li>
+                    <li>O processo pode levar alguns segundos dependendo do tamanho do arquivo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -39,15 +72,64 @@
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('file');
     const fileName = document.getElementById('fileName');
+    const fileLabel = document.getElementById('fileLabel');
     const uploadForm = document.getElementById('uploadForm');
     const submitBtn = document.getElementById('submitBtn');
 
     // Atualizar nome do arquivo selecionado
     fileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
-            fileName.textContent = 'Arquivo selecionado: ' + this.files[0].name;
+            fileName.innerHTML = `
+                <div class="alert alert-info d-flex align-items-center">
+                    <i class="bi bi-file-earmark-check-fill me-2"></i>
+                    <div>
+                        <strong>Arquivo selecionado:</strong> ${this.files[0].name}
+                        <br>
+                        <small>Tamanho: ${(this.files[0].size / 1024).toFixed(2)} KB</small>
+                    </div>
+                </div>
+            `;
+            fileLabel.classList.add('file-selected');
+            fileLabel.innerHTML = `
+                <i class="bi bi-file-earmark-check-fill fs-1 text-success mb-2 d-block"></i>
+                <span class="fs-5 text-success">Arquivo pronto para upload</span>
+                <br>
+                <small class="text-muted">Clique para alterar o arquivo</small>
+            `;
         } else {
-            fileName.textContent = '';
+            fileName.innerHTML = '';
+            fileLabel.classList.remove('file-selected');
+            fileLabel.innerHTML = `
+                <i class="bi bi-cloud-upload-fill fs-1 text-muted mb-2 d-block"></i>
+                <span class="fs-5">Clique aqui ou arraste seu arquivo CSV</span>
+                <br>
+                <small class="text-muted">Arquivos suportados: .csv</small>
+            `;
+        }
+    });
+
+    // Drag and drop functionality
+    fileLabel.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--primary-color)';
+        this.style.backgroundColor = '#e7f3ff';
+    });
+
+    fileLabel.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#6c757d';
+        this.style.backgroundColor = '#e9ecef';
+    });
+
+    fileLabel.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#6c757d';
+        this.style.backgroundColor = '#e9ecef';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
         }
     });
 
@@ -64,10 +146,21 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Mostrar loading
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            Notiflix.Notify.failure('Por favor, selecione um arquivo CSV válido');
+            return;
+        }
+
+        // Desabilitar botão e mostrar loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Processando...
+        `;
+
         Notiflix.Loading.circle('Processando arquivo...');
 
-        // Simular processamento
+        // Enviar arquivo
         fetch('/process_upload', {
             method: 'POST',
             body: formData
@@ -80,7 +173,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 Notiflix.Notify.success(data.message);
                 // Limpar formulário
                 uploadForm.reset();
-                fileName.textContent = '';
+                fileName.innerHTML = '';
+                fileLabel.classList.remove('file-selected');
+                fileLabel.innerHTML = `
+                    <i class="bi bi-cloud-upload-fill fs-1 text-muted mb-2 d-block"></i>
+                    <span class="fs-5">Clique aqui ou arraste seu arquivo CSV</span>
+                    <br>
+                    <small class="text-muted">Arquivos suportados: .csv</small>
+                `;
             } else {
                 Notiflix.Notify.failure(data.message);
             }
@@ -88,6 +188,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             Notiflix.Loading.remove();
             Notiflix.Notify.failure('Erro ao processar arquivo: ' + error.message);
+        })
+        .finally(() => {
+            // Restaurar botão
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+                <i class="bi bi-upload me-2"></i>
+                Importar Arquivo
+            `;
         });
     });
 });

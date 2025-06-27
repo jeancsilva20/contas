@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -5,292 +6,273 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Gestão de Contas Pessoais{% endblock %}</title>
 
-    <!-- Material Web Components -->
-    <script type="module" src="https://unpkg.com/@material/web/all.js"></script>
-
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- DataTables CSS with Bootstrap 5 theme -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
+    
     <!-- Notiflix CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-3.2.6.min.css" />
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Material Web CSS -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <script type="importmap">
-    {
-      "imports": {
-        "@material/web/": "https://esm.run/@material/web/"
-      }
-    }
-    </script>
-    <script type="module">
-      import '@material/web/all.js';
-      import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
-      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
-    </script>
-
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/responsive.bootstrap5.min.js"></script>
 
     <!-- Notiflix JS -->
     <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-aio-3.2.6.min.js"></script>
 
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
-
     <style>
         :root {
-            --md-sys-color-primary: rgb(103, 80, 164);
-            --md-sys-color-surface: rgb(255, 251, 254);
-            --md-sys-color-on-surface: rgb(28, 27, 31);
+            --primary-color: #0d6efd;
+            --primary-dark: #0b5ed7;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--md-sys-color-surface);
-            color: var(--md-sys-color-on-surface);
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 400;
-            color: var(--md-sys-color-primary);
-            margin: 0;
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.25rem;
         }
 
         .card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-            margin-bottom: 16px;
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 0.5rem;
         }
 
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 0.5rem 0.5rem 0 0 !important;
             font-weight: 500;
         }
 
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+        /* File input styling */
         .file-input-wrapper {
             position: relative;
+            overflow: hidden;
             display: inline-block;
             width: 100%;
         }
 
-        .file-input {
+        .file-input-wrapper input[type=file] {
             position: absolute;
             left: -9999px;
-            opacity: 0;
         }
 
         .file-input-label {
-            display: inline-block;
-            padding: 12px 24px;
-            background: var(--md-sys-color-primary);
-            color: white;
-            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            padding: 0.75rem 1.5rem;
+            background-color: #e9ecef;
+            border: 2px dashed #6c757d;
+            border-radius: 0.5rem;
             text-align: center;
+            transition: all 0.3s ease;
+            display: block;
             width: 100%;
-            box-sizing: border-box;
         }
 
         .file-input-label:hover {
-            background: rgba(103, 80, 164, 0.8);
+            background-color: #f8f9fa;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
         }
 
-        .file-name {
-            margin-top: 8px;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        md-filled-text-field {
-            width: 100%;
-            margin-bottom: 16px;
-        }
-
-        md-filled-button {
-            width: 100%;
-            margin-top: 16px;
+        .file-input-label.file-selected {
+            background-color: #d1ecf1;
+            border-color: var(--info-color);
+            color: #0c5460;
         }
 
         /* DataTables customization */
-        .dataTables_wrapper {
-            width: 100%;
+        .table {
+            font-size: 0.9rem;
         }
 
-        .dataTables_filter input {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-left: 8px;
+        .table thead th {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+            border-color: var(--primary-color) !important;
+            font-weight: 500;
         }
 
-        .dataTables_length select {
-            padding: 4px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .table tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
         }
 
-        table.dataTable {
-            width: 100% !important;
-            border-collapse: collapse;
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            color: white !important;
         }
 
-        table.dataTable thead th {
-            background-color: var(--md-sys-color-primary);
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #e9ecef !important;
+            border-color: #dee2e6 !important;
+            color: var(--primary-color) !important;
+        }
+
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+        }
+
+        /* Modal customization */
+        .modal-header {
+            background-color: var(--primary-color);
             color: white;
-            padding: 12px;
-            text-align: left;
+            border-bottom: none;
         }
 
-        table.dataTable tbody td {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+        .modal-header .btn-close {
+            filter: invert(1);
         }
 
-        table.dataTable tbody tr:hover {
-            background-color: #f5f5f5;
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
         }
 
-        /* Material Web Dialog customization */
-        md-dialog {
-            --md-dialog-container-color: white;
-            --md-dialog-headline-color: #1976d2;
-            max-width: 800px;
-        }
-
-        md-dialog [slot="headline"] {
+        /* Form styling */
+        .form-label {
             font-weight: 500;
-            font-size: 1.5rem;
+            color: #495057;
         }
 
-        md-dialog [slot="content"] {
-            color: #424242;
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
         }
 
-        .dialog-content {
-            padding: 16px 0;
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
         }
 
-        .form-field {
-            margin-bottom: 16px;
+        /* Badge styling */
+        .badge {
+            font-size: 0.75em;
         }
 
-        .form-field label {
-            display: block;
-            margin-bottom: 4px;
-            font-weight: 500;
-            color: #1976d2;
+        /* Progress styling */
+        .progress {
+            height: 0.5rem;
         }
 
-        .form-field input, .form-field textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+        /* Alert styling */
+        .alert {
+            border: none;
+            border-radius: 0.5rem;
         }
 
-        .form-field input:focus, .form-field textarea:focus {
-            outline: none;
-            border-color: #1976d2;
-            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+        /* Custom button sizes */
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
         }
 
-        .checkbox-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin: 12px 0;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .checkbox-item input[type="checkbox"] {
-            width: auto;
-        }
-
-        .percentual-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin: 12px 0;
-        }
-
-        .info-card {
-            background: #f5f5f5;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
-
-        .info-card h6 {
-            margin: 0 0 12px 0;
-            color: #1976d2;
+        /* Value styling */
+        .value-negative {
+            color: var(--danger-color);
             font-weight: 500;
         }
 
-        .info-card p {
-            margin: 4px 0;
-            font-size: 14px;
+        .value-positive {
+            color: var(--success-color);
+            font-weight: 500;
         }
 
-        .total-percentual {
-            font-weight: 500;
-            padding: 8px;
-            border-radius: 4px;
+        /* Percentage validation */
+        .percentage-total {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
             text-align: center;
+            font-weight: 500;
         }
 
-        .total-percentual.valid {
-            background-color: #e8f5e8;
-            color: #2e7d32;
+        .percentage-valid {
+            background-color: #d1edcc;
+            color: var(--success-color);
+            border: 1px solid #badbcc;
         }
 
-        .total-percentual.invalid {
-            background-color: #ffebee;
-            color: #c62828;
+        .percentage-invalid {
+            background-color: #f8d7da;
+            color: var(--danger-color);
+            border: 1px solid #f5c2c7;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: none;
         }
     </style>
 
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>{% block header %}Sistema de Gestão de Contas Pessoais{% endblock %}</h1>
-        </header>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-wallet2 me-2"></i>
+                Sistema de Gestão de Contas
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="bi bi-upload me-1"></i>
+                    Upload
+                </a>
+                <a class="nav-link" href="/pendentes">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Pendentes
+                </a>
+            </div>
+        </div>
+    </nav>
 
-        <main>
-            {% block content %}{% endblock %}
-        </main>
+    <!-- Main Content -->
+    <div class="container">
+        {% block content %}{% endblock %}
     </div>
 
     {% block extra_js %}{% endblock %}
