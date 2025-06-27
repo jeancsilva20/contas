@@ -408,7 +408,8 @@ $(document).ready(function() {
                 Notiflix.Notify.success('Revisão salva com sucesso!');
                 
                 // Fechar modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalRevisao'));
+                const modalElement = document.getElementById('modalRevisao');
+                const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
                 modal.hide();
 
                 // Recarregar página para atualizar a tabela
