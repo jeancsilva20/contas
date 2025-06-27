@@ -15,22 +15,21 @@ def upload():
 @app.route('/process_upload', methods=['POST'])
 def process_upload():
     try:
-        password = request.form.get('password')
         file = request.files.get('file')
         
         # Validações básicas
         if not file:
             return jsonify({'success': False, 'message': 'Arquivo é obrigatório'})
         
-        # Para arquivos Excel, a senha pode ou não ser necessária (dependendo se está criptografado)
-        # A validação será feita no processamento
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({'success': False, 'message': 'Apenas arquivos CSV são suportados'})
         
         # Importa o serviço de importação
         from services.importador import ImportadorTransacoes
         
         # Processa o arquivo
         importador = ImportadorTransacoes()
-        transacoes = importador.processar_arquivo(file, password)
+        transacoes = importador.processar_arquivo(file)
         
         # Salva as transações
         importador.salvar_transacoes(transacoes)

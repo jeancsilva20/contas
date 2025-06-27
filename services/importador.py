@@ -1,285 +1,158 @@
-
 import pandas as pd
-import msoffcrypto
-import io
 import os
 import json
 from datetime import datetime
 from utils.hash import gerar_hash_transacao, transacao_existe
 
 class ImportadorTransacoes:
-    
+
     def __init__(self):
         self.dados_processados = []
         self.novas_transacoes = 0
         self.pendentes_adicionadas = 0
-    
+
     def processar_arquivo(self, arquivo, senha=None):
         """
-        Processa arquivo Excel ou CSV e extrai transações
+        Processa arquivo CSV e extrai transações
         """
         try:
-            # Determina o tipo de arquivo
+            # Verifica se é CSV
             nome_arquivo = arquivo.filename.lower()
-            
-            if nome_arquivo.endswith(('.xlsx', '.xls')):
-                return self._processar_excel(arquivo, senha)
-            elif nome_arquivo.endswith('.csv'):
-                return self._processar_csv(arquivo)
-            else:
-                raise ValueError("Formato de arquivo não suportado")
-                
+            if not nome_arquivo.endswith('.csv'):
+                raise ValueError("Apenas arquivos CSV são suportados")
+
+            return self._processar_csv(arquivo)
+
         except Exception as e:
             raise Exception(f"Erro ao processar arquivo: {str(e)}")
-    
-    def _processar_excel(self, arquivo, senha):
-        """
-        Processa arquivo Excel com ou sem senha
-        """
-        try:
-            # Lê o arquivo em bytes
-            arquivo_bytes = arquivo.read()
-            arquivo.seek(0)  # Reset para próximas operações
-            
-            # Primeiro tenta ler como arquivo não criptografado
-            try:
-                file_obj = io.BytesIO(arquivo_bytes)
-                df = pd.read_excel(file_obj)
-                
-                # Se chegou até aqui, o arquivo não está criptografado
-                tipo_arquivo = self._identificar_tipo_arquivo(df)
-                return self._extrair_transacoes(df, tipo_arquivo)
-                
-            except Exception as e:
-                # Se falhou, pode ser arquivo criptografado
-                if not senha:
-                    raise ValueError("Arquivo protegido por senha. Por favor, forneça a senha.")
-                
-                # Tenta descriptografar
-                file_obj = io.BytesIO(arquivo_bytes)
-                office_file = msoffcrypto.OfficeFile(file_obj)
-                
-                # Verifica se realmente é um arquivo criptografado
-                if not office_file.is_encrypted():
-                    # Se não está criptografado mas deu erro, pode ser problema de formato
-                    raise ValueError("Arquivo Excel com formato inválido ou corrompido")
-                
-                office_file.load_key(password=senha)
-                
-                # Cria um novo BytesIO para o arquivo descriptografado
-                decrypted = io.BytesIO()
-                office_file.decrypt(decrypted)
-                decrypted.seek(0)
-                
-                # Lê com pandas
-                df = pd.read_excel(decrypted)
-                
-                # Determina o tipo baseado nas colunas
-                tipo_arquivo = self._identificar_tipo_arquivo(df)
-                
-                # Processa as transações
-                return self._extrair_transacoes(df, tipo_arquivo)
-            
-        except ValueError:
-            # Re-raise ValueError (mensagens de validação)
-            raise
-        except Exception as e:
-            error_msg = str(e).lower()
-            if any(keyword in error_msg for keyword in ["invalid password", "bad password", "incorrect password", "wrong password"]):
-                raise ValueError("Senha incorreta para o arquivo")
-            elif "password" in error_msg or "encrypted" in error_msg:
-                raise ValueError("Erro de senha ou arquivo corrompido")
-            else:
-                raise Exception(f"Erro ao processar Excel: {str(e)}")
-    
+
     def _processar_csv(self, arquivo):
         """
-        Processa arquivo CSV
+        Processa arquivo CSV do cartão de crédito
         """
         try:
-            # Lê o CSV
-            df = pd.read_csv(arquivo)
-            
-            # Determina o tipo baseado nas colunas
-            tipo_arquivo = self._identificar_tipo_arquivo(df)
-            
+            # Lê o CSV com separador ponto e vírgula
+            df = pd.read_csv(arquivo, sep=';', encoding='utf-8')
+
             # Processa as transações
-            return self._extrair_transacoes(df, tipo_arquivo)
-            
+            return self._extrair_transacoes_cartao(df)
+
         except Exception as e:
             raise Exception(f"Erro ao processar CSV: {str(e)}")
-    
-    def _identificar_tipo_arquivo(self, df):
+
+    def _extrair_transacoes_cartao(self, df):
         """
-        Identifica se é fatura de cartão ou extrato bancário baseado nas colunas
-        """
-        colunas = [col.lower().strip() for col in df.columns]
-        
-        # Colunas características de fatura de cartão
-        cartao_keywords = [
-            'data de compra', 'nome no cartao', 'final do cartao', 
-            'categoria', 'parcela', 'valor (em us$)', 'cotacao', 'valor (em r$)'
-        ]
-        
-        # Colunas características de extrato bancário
-        conta_keywords = [
-            'data lancamento', 'data contabil', 'titulo', 
-            'entrada(r$)', 'saida(r$)', 'saldo do dia'
-        ]
-        
-        cartao_score = sum(1 for keyword in cartao_keywords 
-                          if any(keyword in col for col in colunas))
-        conta_score = sum(1 for keyword in conta_keywords 
-                         if any(keyword in col for col in colunas))
-        
-        return 'cartao' if cartao_score > conta_score else 'conta'
-    
-    def _extrair_transacoes(self, df, tipo_arquivo):
-        """
-        Extrai e padroniza transações do DataFrame
+        Extrai transações do CSV do cartão de crédito
         """
         transacoes = []
-        
-        if tipo_arquivo == 'cartao':
-            # Mapeamento para fatura de cartão
-            col_data = self._encontrar_coluna(df, ['data de compra', 'data_compra', 'data'])
-            col_descricao = self._encontrar_coluna(df, ['descricao', 'description'])
-            col_valor = self._encontrar_coluna(df, ['valor (em r$)', 'valor_rs', 'valor'])
-            col_parcela = self._encontrar_coluna(df, ['parcela'])
-        else:
-            # Mapeamento para extrato bancário
-            col_data = self._encontrar_coluna(df, ['data lancamento', 'data_lancamento', 'data'])
-            col_descricao = self._encontrar_coluna(df, ['descricao', 'description'])
-            col_titulo = self._encontrar_coluna(df, ['titulo'])
-            col_entrada = self._encontrar_coluna(df, ['entrada(r$)', 'entrada'])
-            col_saida = self._encontrar_coluna(df, ['saida(r$)', 'saida'])
-        
-        if not col_data or not col_descricao:
-            raise ValueError("Não foi possível identificar as colunas necessárias no arquivo")
-        
-        for _, row in df.iterrows():
+
+        # Verifica se as colunas necessárias existem
+        colunas_necessarias = ['Data de compra', 'Descrição', 'Valor (em R$)']
+        colunas_df = df.columns.tolist()
+
+        for coluna in colunas_necessarias:
+            if coluna not in colunas_df:
+                raise ValueError(f"Coluna '{coluna}' não encontrada no arquivo")
+
+        for index, row in df.iterrows():
             try:
                 # Extrai dados da linha
-                data = pd.to_datetime(row[col_data])
-                descricao = str(row[col_descricao]).strip()
-                
-                # Pula linhas vazias ou inválidas
-                if pd.isna(data) or not descricao or descricao.lower() in ['nan', '']:
+                data_str = str(row['Data de compra']).strip()
+                if not data_str or data_str.lower() in ['nan', '']:
                     continue
-                
-                if tipo_arquivo == 'cartao':
-                    if not col_valor:
-                        continue
-                    valor = float(row[col_valor])
-                    tipo_movimento = 'saida'  # Fatura de cartão sempre é saída
-                    valor_abs = abs(valor)
-                    
-                    # Adiciona informação de parcela se disponível
-                    observacoes = ''
-                    if col_parcela and not pd.isna(row[col_parcela]):
-                        observacoes = f"Parcela: {row[col_parcela]}"
-                        
-                else:  # extrato bancário
-                    # Determina valor e tipo de movimento
-                    entrada = 0 if pd.isna(row[col_entrada]) else float(row[col_entrada])
-                    saida = 0 if pd.isna(row[col_saida]) else float(row[col_saida])
-                    
-                    if entrada > 0:
-                        valor_abs = entrada
-                        tipo_movimento = 'entrada'
-                    elif saida > 0:
-                        valor_abs = saida
-                        tipo_movimento = 'saida'
-                    else:
-                        continue  # Pula se não há valor
-                    
-                    # Adiciona título como observação se disponível
-                    observacoes = ''
-                    if col_titulo and not pd.isna(row[col_titulo]):
-                        observacoes = f"Título: {row[col_titulo]}"
-                
-                # Determina fonte baseada no tipo
-                fonte = self._determinar_fonte(tipo_arquivo)
-                
+
+                # Converte data do formato DD/MM/YYYY
+                data = datetime.strptime(data_str, '%d/%m/%Y')
+
+                descricao = str(row['Descrição']).strip()
+                if not descricao or descricao.lower() in ['nan', '']:
+                    continue
+
+                # Processa o valor
+                valor_str = str(row['Valor (em R$)']).strip()
+                if not valor_str or valor_str.lower() in ['nan', '']:
+                    continue
+
+                # Remove aspas e converte vírgula para ponto
+                valor_str = valor_str.replace('"', '').replace(',', '.')
+                valor = float(valor_str)
+                valor_abs = abs(valor)
+
+                # Informações adicionais se disponíveis
+                observacoes = []
+
+                # Parcela
+                if 'Parcela' in colunas_df and not pd.isna(row['Parcela']):
+                    parcela = str(row['Parcela']).strip()
+                    if parcela and parcela.lower() != 'nan':
+                        observacoes.append(f"Parcela: {parcela}")
+
+                # Categoria
+                if 'Categoria' in colunas_df and not pd.isna(row['Categoria']):
+                    categoria = str(row['Categoria']).strip()
+                    if categoria and categoria.lower() != 'nan':
+                        observacoes.append(f"Categoria: {categoria}")
+
+                # Nome no cartão
+                if 'Nome no cartão' in colunas_df and not pd.isna(row['Nome no cartão']):
+                    nome_cartao = str(row['Nome no cartão']).strip()
+                    if nome_cartao and nome_cartao.lower() != 'nan':
+                        observacoes.append(f"Cartão: {nome_cartao}")
+
+                observacoes_str = ' | '.join(observacoes) if observacoes else ''
+
                 # Gera hash único
-                hash_transacao = gerar_hash_transacao(data, descricao, valor_abs, tipo_arquivo)
-                
+                hash_transacao = gerar_hash_transacao(data, descricao, valor_abs, 'cartao')
+
                 # Verifica se já existe
                 if transacao_existe(hash_transacao):
                     continue
-                
+
                 # Cria objeto de transação
                 transacao = {
-                    'id': f"{tipo_arquivo}_{int(datetime.now().timestamp())}_{len(transacoes)}",
-                    'tipo': tipo_arquivo,
+                    'id': f"cartao_{int(datetime.now().timestamp())}_{len(transacoes)}",
+                    'tipo': 'cartao',
                     'data': data.strftime('%Y-%m-%d'),
                     'descricao': descricao,
                     'valor': valor_abs,
-                    'tipo_movimento': tipo_movimento,
-                    'fonte': fonte,
+                    'tipo_movimento': 'saida',  # Cartão sempre é saída
+                    'fonte': 'Cartão de Crédito',
                     'hash': hash_transacao,
-                    'observacoes': observacoes
+                    'observacoes': observacoes_str
                 }
-                
+
                 transacoes.append(transacao)
-                
+
             except Exception as e:
                 # Pula linhas com erro mas continua processamento
+                print(f"Erro ao processar linha {index}: {str(e)}")
                 continue
-        
+
         return transacoes
-    
-    def _encontrar_coluna(self, df, possiveis_nomes):
-        """
-        Encontra a coluna correspondente baseada em nomes possíveis
-        """
-        colunas_df = [col.lower().strip() for col in df.columns]
-        
-        for nome in possiveis_nomes:
-            nome_lower = nome.lower().strip()
-            # Busca correspondência exata primeiro
-            for i, col in enumerate(colunas_df):
-                if nome_lower == col:
-                    return df.columns[i]
-            
-            # Busca correspondência parcial
-            for i, col in enumerate(colunas_df):
-                if nome_lower in col or col in nome_lower:
-                    return df.columns[i]
-        return None
-    
-    def _determinar_fonte(self, tipo_arquivo):
-        """
-        Determina a fonte baseada no tipo de arquivo
-        """
-        if tipo_arquivo == 'cartao':
-            return 'C6 Carbon'
-        else:
-            return 'C6 Conta Corrente'
-    
+
     def salvar_transacoes(self, transacoes):
         """
         Salva transações nos arquivos apropriados
         """
         if not transacoes:
             return
-        
+
         # Garante que o diretório data existe
         os.makedirs('data', exist_ok=True)
-        
+
         # Carrega transações existentes
         transacoes_existentes = self._carregar_json('data/transacoes.json')
-        
+
         # Adiciona novas transações
         transacoes_existentes.extend(transacoes)
         self.novas_transacoes = len(transacoes)
-        
+
         # Salva transações atualizadas
         self._salvar_json('data/transacoes.json', transacoes_existentes)
-        
+
         # Processa pendentes (apenas saídas não revisadas)
         self._processar_pendentes(transacoes)
-    
+
     def _processar_pendentes(self, transacoes):
         """
         Adiciona transações de saída aos pendentes se não foram revisadas
@@ -287,21 +160,21 @@ class ImportadorTransacoes:
         # Carrega revisões existentes
         revisoes = self._carregar_json('data/revisoes.json')
         hashes_revisados = {r.get('hash') for r in revisoes if r.get('hash')}
-        
+
         # Carrega pendentes existentes
         pendentes = self._carregar_json('data/pendentes.json')
-        
+
         # Filtra saídas não revisadas
         novas_pendentes = [
             t for t in transacoes 
             if t['tipo_movimento'] == 'saida' and t['hash'] not in hashes_revisados
         ]
-        
+
         if novas_pendentes:
             pendentes.extend(novas_pendentes)
             self.pendentes_adicionadas = len(novas_pendentes)
             self._salvar_json('data/pendentes.json', pendentes)
-    
+
     def _carregar_json(self, caminho):
         """
         Carrega arquivo JSON ou retorna lista vazia se não existir
@@ -311,7 +184,7 @@ class ImportadorTransacoes:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             return []
-    
+
     def _salvar_json(self, caminho, dados):
         """
         Salva dados em arquivo JSON com formatação
