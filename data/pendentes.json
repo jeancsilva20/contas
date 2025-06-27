@@ -792,17 +792,6 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA"
   },
   {
-    "id": "cartao_1751044823_78",
-    "tipo": "cartao",
-    "data": "2025-06-02",
-    "descricao": "VALDIRFERNANDES",
-    "valor": 14.0,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "6339819d1f11ee7fda0cefc338805177bc9c999eaab39e16ea3077a085f7c9e8",
-    "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA"
-  },
-  {
     "id": "cartao_1751044823_80",
     "tipo": "cartao",
     "data": "2025-05-13",
