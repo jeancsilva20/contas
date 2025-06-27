@@ -161,6 +161,71 @@ def resumo():
     except Exception as e:
         return f"Erro ao carregar resumo: {str(e)}", 500
 
+@app.route('/rateio')
+def rateio():
+    """
+    Exibe rateio dos custos entre as pessoas baseado nas revisões
+    """
+    try:
+        import json
+        from collections import defaultdict
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Carrega transações para obter valores
+        try:
+            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
+                transacoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            transacoes = []
+        
+        # Cria mapa de transações por hash
+        transacoes_map = {t['hash']: t for t in transacoes}
+        
+        # Calcula valores por pessoa
+        rateio_pessoa = defaultdict(float)
+        total_geral = 0
+        total_transacoes = 0
+        
+        for revisao in revisoes:
+            # Busca dados da transação original
+            transacao = transacoes_map.get(revisao['hash'])
+            if not transacao:
+                continue
+            
+            valor = abs(transacao['valor'])  # Usa valor absoluto
+            total_geral += valor
+            total_transacoes += 1
+            
+            # Distribui valor baseado nos percentuais
+            donos = revisao.get('donos', {})
+            for pessoa, percentual in donos.items():
+                valor_pessoa = valor * (percentual / 100)
+                rateio_pessoa[pessoa] += valor_pessoa
+        
+        # Ordena por valor (maior para menor)
+        dados_rateio = [
+            {
+                'pessoa': pessoa, 
+                'valor': valor,
+                'percentual_total': (valor / total_geral * 100) if total_geral > 0 else 0
+            } 
+            for pessoa, valor in sorted(rateio_pessoa.items(), key=lambda x: x[1], reverse=True)
+        ]
+        
+        return render_template('rateio.html', 
+                             dados_rateio=dados_rateio,
+                             total_geral=total_geral,
+                             total_transacoes=total_transacoes)
+        
+    except Exception as e:
+        return f"Erro ao carregar rateio: {str(e)}", 500
+
 @app.route('/salvar_revisao', methods=['POST'])
 def salvar_revisao():
     """

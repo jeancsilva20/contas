@@ -1,0 +1,338 @@
+
+{% extends "base.html" %}
+
+{% block title %}Rateio de Custos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rateio-card {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .rateio-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .rateio-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .rateio-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .chart-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .pessoa-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .pessoa-jean { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+    .pessoa-joao-rafael { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; }
+    .pessoa-juliano { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+    .pessoa-tati { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+    .pessoa-joao-batista { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+    
+    .valor-cell {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .percentual-cell {
+        font-weight: 500;
+        color: #6b7280;
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .no-data i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .progress-custom {
+        height: 8px;
+        border-radius: 10px;
+        background-color: #e5e7eb;
+    }
+    
+    .progress-bar-custom {
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-center mb-4">
+            <i class="bi bi-pie-chart me-2"></i>
+            Rateio de Custos
+        </h2>
+    </div>
+</div>
+
+{% if total_transacoes > 0 %}
+<!-- Cards de Resumo -->
+<div class="row mb-5">
+    <div class="col-md-4 mb-3">
+        <div class="rateio-card">
+            <div class="rateio-value">R$ {{ "%.2f"|format(total_geral) }}</div>
+            <div class="rateio-label">Total Rateado</div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="rateio-card">
+            <div class="rateio-value">{{ total_transacoes }}</div>
+            <div class="rateio-label">Transações</div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="rateio-card">
+            <div class="rateio-value">{{ dados_rateio|length }}</div>
+            <div class="rateio-label">Pessoas</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Tabela de Rateio -->
+    <div class="col-lg-7 mb-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-table me-2"></i>
+                Distribuição por Pessoa
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Pessoa</th>
+                            <th>Valor</th>
+                            <th>% do Total</th>
+                            <th>Proporção</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in dados_rateio %}
+                        <tr>
+                            <td>
+                                <span class="pessoa-badge pessoa-{{ item.pessoa|lower|replace(' ', '-')|replace('ã', 'a') }}">
+                                    {{ item.pessoa }}
+                                </span>
+                            </td>
+                            <td class="valor-cell">
+                                R$ {{ "%.2f"|format(item.valor) }}
+                            </td>
+                            <td class="percentual-cell">
+                                {{ "%.1f"|format(item.percentual_total) }}%
+                            </td>
+                            <td>
+                                <div class="progress progress-custom" style="width: 100px;">
+                                    <div class="progress-bar progress-bar-custom" 
+                                         role="progressbar" 
+                                         style="width: {{ item.percentual_total }}%"
+                                         aria-valuenow="{{ item.percentual_total }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráfico de Pizza -->
+    <div class="col-lg-5 mb-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-pie-chart me-2"></i>
+                Distribuição Visual
+            </div>
+            <div id="chart-rateio" style="height: 400px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo Estatístico -->
+<div class="row">
+    <div class="col-12">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-calculator me-2"></i>
+                Estatísticas do Rateio
+            </div>
+            
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h5 class="text-primary">Valor Médio</h5>
+                    <p class="fs-4 fw-bold">R$ {{ "%.2f"|format(total_geral / dados_rateio|length) }}</p>
+                </div>
+                <div class="col-md-3">
+                    <h5 class="text-success">Maior Responsabilidade</h5>
+                    <p class="fs-4 fw-bold">{{ dados_rateio[0].pessoa if dados_rateio else '-' }}</p>
+                </div>
+                <div class="col-md-3">
+                    <h5 class="text-warning">Menor Responsabilidade</h5>
+                    <p class="fs-4 fw-bold">{{ dados_rateio[-1].pessoa if dados_rateio else '-' }}</p>
+                </div>
+                <div class="col-md-3">
+                    <h5 class="text-info">Valor por Transação</h5>
+                    <p class="fs-4 fw-bold">R$ {{ "%.2f"|format(total_geral / total_transacoes) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Estado Vazio -->
+<div class="row">
+    <div class="col-12">
+        <div class="chart-container">
+            <div class="no-data">
+                <i class="bi bi-pie-chart"></i>
+                <h4>Nenhum dado disponível</h4>
+                <p class="mb-4">Ainda não há transações revisadas para calcular o rateio.</p>
+                <a href="/pendentes" class="btn btn-primary">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Ver Pendentes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+
+{% if total_transacoes > 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dados do backend
+    const dadosRateio = {{ dados_rateio | tojson }};
+    
+    // Cores personalizadas por pessoa
+    const coresPessoas = {
+        'Jean': '#6366f1',
+        'João Rafael': '#06b6d4', 
+        'Juliano': '#10b981',
+        'Tati': '#f59e0b',
+        'João Batista': '#ef4444'
+    };
+    
+    // Gráfico de Pizza - Rateio
+    const chartRateio = echarts.init(document.getElementById('chart-rateio'));
+    const optionRateio = {
+        tooltip: {
+            trigger: 'item',
+            formatter: function(params) {
+                return `${params.name}<br/>Valor: R$ ${params.value.toFixed(2)}<br/>Percentual: ${params.percent}%`;
+            }
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left',
+            textStyle: {
+                fontSize: 11
+            },
+            formatter: function(name) {
+                return name.length > 10 ? name.substring(0, 10) + '...' : name;
+            }
+        },
+        series: [{
+            name: 'Rateio',
+            type: 'pie',
+            radius: ['30%', '70%'],
+            center: ['65%', '50%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+                borderRadius: 8,
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            label: {
+                show: false,
+                position: 'center'
+            },
+            emphasis: {
+                label: {
+                    show: true,
+                    fontSize: '14',
+                    fontWeight: 'bold',
+                    formatter: function(params) {
+                        return `${params.name}\nR$ ${params.value.toFixed(2)}`;
+                    }
+                },
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            },
+            labelLine: {
+                show: false
+            },
+            data: dadosRateio.map(item => ({
+                value: item.valor,
+                name: item.pessoa,
+                itemStyle: {
+                    color: coresPessoas[item.pessoa] || '#6b7280'
+                }
+            }))
+        }]
+    };
+    chartRateio.setOption(optionRateio);
+    
+    // Responsividade
+    window.addEventListener('resize', function() {
+        chartRateio.resize();
+    });
+});
+</script>
+{% endif %}
+{% endblock %}
