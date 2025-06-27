@@ -34,40 +34,60 @@ class ImportadorTransacoes:
     
     def _processar_excel(self, arquivo, senha):
         """
-        Processa arquivo Excel com senha
+        Processa arquivo Excel com ou sem senha
         """
-        if not senha:
-            raise ValueError("Senha é obrigatória para arquivos Excel")
-        
         try:
             # Lê o arquivo em bytes
             arquivo_bytes = arquivo.read()
             arquivo.seek(0)  # Reset para próximas operações
             
-            # Descriptografa o arquivo
-            file_obj = io.BytesIO(arquivo_bytes)
-            office_file = msoffcrypto.OfficeFile(file_obj)
-            office_file.load_key(password=senha)
+            # Primeiro tenta ler como arquivo não criptografado
+            try:
+                file_obj = io.BytesIO(arquivo_bytes)
+                df = pd.read_excel(file_obj)
+                
+                # Se chegou até aqui, o arquivo não está criptografado
+                tipo_arquivo = self._identificar_tipo_arquivo(df)
+                return self._extrair_transacoes(df, tipo_arquivo)
+                
+            except Exception as e:
+                # Se falhou, pode ser arquivo criptografado
+                if not senha:
+                    raise ValueError("Arquivo protegido por senha. Por favor, forneça a senha.")
+                
+                # Tenta descriptografar
+                file_obj = io.BytesIO(arquivo_bytes)
+                office_file = msoffcrypto.OfficeFile(file_obj)
+                
+                # Verifica se realmente é um arquivo criptografado
+                if not office_file.is_encrypted():
+                    # Se não está criptografado mas deu erro, pode ser problema de formato
+                    raise ValueError("Arquivo Excel com formato inválido ou corrompido")
+                
+                office_file.load_key(password=senha)
+                
+                # Cria um novo BytesIO para o arquivo descriptografado
+                decrypted = io.BytesIO()
+                office_file.decrypt(decrypted)
+                decrypted.seek(0)
+                
+                # Lê com pandas
+                df = pd.read_excel(decrypted)
+                
+                # Determina o tipo baseado nas colunas
+                tipo_arquivo = self._identificar_tipo_arquivo(df)
+                
+                # Processa as transações
+                return self._extrair_transacoes(df, tipo_arquivo)
             
-            # Cria um novo BytesIO para o arquivo descriptografado
-            decrypted = io.BytesIO()
-            office_file.decrypt(decrypted)
-            decrypted.seek(0)
-            
-            # Lê com pandas
-            df = pd.read_excel(decrypted)
-            
-            # Determina o tipo baseado nas colunas
-            tipo_arquivo = self._identificar_tipo_arquivo(df)
-            
-            # Processa as transações
-            return self._extrair_transacoes(df, tipo_arquivo)
-            
+        except ValueError:
+            # Re-raise ValueError (mensagens de validação)
+            raise
         except Exception as e:
             error_msg = str(e).lower()
             if any(keyword in error_msg for keyword in ["invalid password", "bad password", "incorrect password", "wrong password"]):
                 raise ValueError("Senha incorreta para o arquivo")
-            elif "password" in error_msg:
+            elif "password" in error_msg or "encrypted" in error_msg:
                 raise ValueError("Erro de senha ou arquivo corrompido")
             else:
                 raise Exception(f"Erro ao processar Excel: {str(e)}")

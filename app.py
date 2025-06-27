@@ -22,9 +22,8 @@ def process_upload():
         if not file:
             return jsonify({'success': False, 'message': 'Arquivo é obrigatório'})
         
-        # Para arquivos Excel, senha é obrigatória
-        if file.filename.lower().endswith(('.xlsx', '.xls')) and not password:
-            return jsonify({'success': False, 'message': 'Senha é obrigatória para arquivos Excel'})
+        # Para arquivos Excel, a senha pode ou não ser necessária (dependendo se está criptografado)
+        # A validação será feita no processamento
         
         # Importa o serviço de importação
         from services.importador import ImportadorTransacoes
