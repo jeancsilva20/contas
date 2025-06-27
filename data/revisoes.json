@@ -1,2 +1,25 @@
-
-[]
+[
+  {
+    "hash": "f617609c6f17ce1f30e40d870c1070b73ec6f09fc0118baa15e88004e97cc7d1",
+    "id_original": "cartao_1751044823_4",
+    "nova_descricao": "OPENAI                 +1",
+    "donos": {
+      "Jean": 100
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T17:50:02.778811",
+    "revisado_por": "Usuario"
+  },
+  {
+    "hash": "1318029dfa7545fc8dfce2c546416bdace3f8e7124a672256db5d0ace4cd4009",
+    "id_original": "cartao_1751044823_0",
+    "nova_descricao": "AZUL WE*EF3ZQYSILVA",
+    "donos": {
+      "Jean": 50,
+      "Tati": 50
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T17:50:36.738606",
+    "revisado_por": "Usuario"
+  }
+]

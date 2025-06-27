@@ -1,16 +1,5 @@
 [
   {
-    "id": "cartao_1751044823_0",
-    "tipo": "cartao",
-    "data": "2025-04-07",
-    "descricao": "AZUL WE*EF3ZQYSILVA",
-    "valor": 1131.8,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "1318029dfa7545fc8dfce2c546416bdace3f8e7124a672256db5d0ace4cd4009",
-    "observacoes": "Parcela: 2/2 | Categoria: T&E Companhia aérea | Cartão: JEAN C SILVA"
-  },
-  {
     "id": "cartao_1751044823_1",
     "tipo": "cartao",
     "data": "2025-04-14",
@@ -44,17 +33,6 @@
     "observacoes": "Parcela: Única | Categoria: Entretenimento | Cartão: JEAN C SILVA"
   },
   {
-    "id": "cartao_1751044823_4",
-    "tipo": "cartao",
-    "data": "2025-05-29",
-    "descricao": "OPENAI                 +1",
-    "valor": 29.96,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "f617609c6f17ce1f30e40d870c1070b73ec6f09fc0118baa15e88004e97cc7d1",
-    "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA"
-  },
-  {
     "id": "cartao_1751044823_5",
     "tipo": "cartao",
     "data": "2025-05-29",
@@ -63,17 +41,6 @@
     "tipo_movimento": "saida",
     "fonte": "Cartão de Crédito",
     "hash": "9054dbaaaeb63cb54180f2418092d6a4c926f576f3595fb727b7dec5a13ab71b",
-    "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA"
-  },
-  {
-    "id": "cartao_1751044823_6",
-    "tipo": "cartao",
-    "data": "2025-05-29",
-    "descricao": "OPENAI                 +1",
-    "valor": 29.96,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "f617609c6f17ce1f30e40d870c1070b73ec6f09fc0118baa15e88004e97cc7d1",
     "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA"
   },
   {
