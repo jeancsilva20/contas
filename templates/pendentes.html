@@ -14,7 +14,7 @@
                     <div class="card-content">
                         <span class="card-title">{{ pendentes|length }} transações aguardando categorização</span>
                         
-                        <table class="striped responsive-table">
+                        <table id="pendentes-tabela" class="display responsive nowrap" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>Data</th>
@@ -29,11 +29,9 @@
                                 <tr>
                                     <td>{{ transacao.data }}</td>
                                     <td>{{ transacao.descricao }}</td>
-                                    <td class="red-text">R$ {{ "%.2f"|format(transacao.valor) }}</td>
+                                    <td>R$ {{ "%.2f"|format(transacao.valor) }}</td>
                                     <td>{{ transacao.fonte }}</td>
-                                    <td>
-                                        <small>{{ transacao.observacoes or '-' }}</small>
-                                    </td>
+                                    <td>{{ transacao.observacoes or '-' }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -69,4 +67,37 @@
         </div>
     </div>
 </div>
+
+<script>
+$(document).ready(function() {
+    $('#pendentes-tabela').DataTable({
+        responsive: true,
+        paging: true,
+        searching: true,
+        ordering: true,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+        order: [[0, 'desc']], // Ordenar por data (mais recente primeiro)
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
+        },
+        columnDefs: [
+            {
+                targets: 2, // Coluna Valor
+                className: 'text-right',
+                render: function(data, type, row) {
+                    if (type === 'display') {
+                        return '<span style="color: #f44336; font-weight: 500;">' + data + '</span>';
+                    }
+                    return data;
+                }
+            },
+            {
+                targets: 4, // Coluna Observações
+                width: '30%'
+            }
+        ]
+    });
+});
+</script>
 {% endblock %}
