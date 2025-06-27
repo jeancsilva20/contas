@@ -1,94 +1,14 @@
 [
   {
-    "hash": "f617609c6f17ce1f30e40d870c1070b73ec6f09fc0118baa15e88004e97cc7d1",
-    "id_original": "cartao_1751044823_4",
-    "nova_descricao": "OPENAI                 +1",
-    "donos": {
-      "Jean": 100
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T17:50:02.778811",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "1318029dfa7545fc8dfce2c546416bdace3f8e7124a672256db5d0ace4cd4009",
-    "id_original": "cartao_1751044823_0",
-    "nova_descricao": "AZUL WE*EF3ZQYSILVA",
+    "hash": "432ebe629268dd1dd025ac8e1c5d2cfcaa07ab6d0af927207aca8e3afc375a40",
+    "id_original": "cartao_1751056552_27",
+    "nova_descricao": "EZG0421-CAMPINAS SHOPPING  Rua Jacy Teix",
     "donos": {
       "Jean": 50,
       "Tati": 50
     },
     "comentarios": "",
-    "data_revisao": "2025-06-27T17:50:36.738606",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "07709aa39a7a860faf73005475e4a134083e7318fbbc7a51d87c7f87848da09a",
-    "id_original": "cartao_1751044823_77",
-    "nova_descricao": "BREWTECO TERRACO",
-    "donos": {
-      "Jean": 100
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T18:05:31.541135",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "411b52865219d704acfd5acfc83194d2de73b41d55138372287b578d14f059c8",
-    "id_original": "cartao_1751044823_79",
-    "nova_descricao": "WINDSOR FLORIDA HOTEL",
-    "donos": {
-      "Jean": 100
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T18:13:43.805608",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "8aed672197854f94d9c500ebac8f24f8c14aa93d0e6624e93d31bdc75b846ac2",
-    "id_original": "cartao_1751044823_73",
-    "nova_descricao": "AMAZONPRIMEBR",
-    "donos": {
-      "Jean": 100
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T18:15:04.618400",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "f2165615e407ae2c525c916e613f0758940fbb070ab658334f9cfa289dd9a852",
-    "id_original": "cartao_1751044823_8",
-    "nova_descricao": "MERCADOLIVRE*COCHILAR",
-    "donos": {
-      "Jean": 100
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T18:27:27.286967",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "6339819d1f11ee7fda0cefc338805177bc9c999eaab39e16ea3077a085f7c9e8",
-    "id_original": "cartao_1751044823_78",
-    "nova_descricao": "VALDIRFERNANDES",
-    "donos": {
-      "João Rafael": 50,
-      "Juliano": 50
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T18:51:44.838168",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "53e2b741c0f65b114c1f7c0da885b21ede1e01dd223f6dfc898eca3c5b890484",
-    "id_original": "cartao_1751044823_15",
-    "nova_descricao": "Remédio Clips",
-    "donos": {
-      "Jean": 34,
-      "João Rafael": 33,
-      "Juliano": 33
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T20:01:26.734481",
+    "data_revisao": "2025-06-27T20:47:11.737592",
     "revisado_por": "Usuario"
   }
 ]
