@@ -193,43 +193,65 @@ def resumo():
             if data_fim and data_str > data_fim:
                 continue
             
+            valor = abs(transacao['valor'])  # Usa valor absoluto para soma
+            donos = revisao.get('donos', {})
+            
             # Aplica filtro de responsável
             if responsavel:
-                donos = revisao.get('donos', {})
                 if responsavel not in donos or donos[responsavel] == 0:
                     continue
-            
-            valor = abs(transacao['valor'])  # Usa valor absoluto para soma
-            
-            # Total geral
-            total_geral += valor
-            
-            # Por mês
-            try:
-                data_obj = datetime.strptime(data_str, '%Y-%m-%d')
-                mes_ano = data_obj.strftime('%Y-%m')
-                por_mes[mes_ano] += valor
-            except:
-                pass
-            
-            # Por pessoa (baseado nos donos da revisão)
-            donos = revisao.get('donos', {})
-            for pessoa, percentual in donos.items():
-                # Se há filtro de responsável, só calcula para essa pessoa
-                if responsavel and pessoa != responsavel:
-                    continue
-                valor_pessoa = valor * (percentual / 100)
-                por_pessoa[pessoa] += valor_pessoa
-            
-            # Por categoria (extraída das observações da transação)
-            observacoes = transacao.get('observacoes', '')
-            categoria = 'Outros'
-            if 'Categoria:' in observacoes:
+                # Quando há filtro de responsável, só considera o valor atribuído a essa pessoa
+                valor_pessoa_filtrada = valor * (donos[responsavel] / 100)
+                
+                # Total geral (só o valor da pessoa filtrada)
+                total_geral += valor_pessoa_filtrada
+                
+                # Por mês (só o valor da pessoa filtrada)
                 try:
-                    categoria = observacoes.split('Categoria:')[1].split('|')[0].strip()
+                    data_obj = datetime.strptime(data_str, '%Y-%m-%d')
+                    mes_ano = data_obj.strftime('%Y-%m')
+                    por_mes[mes_ano] += valor_pessoa_filtrada
                 except:
                     pass
-            por_categoria[categoria] += valor
+                
+                # Por pessoa (só a pessoa filtrada)
+                por_pessoa[responsavel] += valor_pessoa_filtrada
+                
+                # Por categoria (só o valor da pessoa filtrada)
+                observacoes = transacao.get('observacoes', '')
+                categoria = 'Outros'
+                if 'Categoria:' in observacoes:
+                    try:
+                        categoria = observacoes.split('Categoria:')[1].split('|')[0].strip()
+                    except:
+                        pass
+                por_categoria[categoria] += valor_pessoa_filtrada
+            else:
+                # Sem filtro de responsável - considera valor total
+                total_geral += valor
+                
+                # Por mês
+                try:
+                    data_obj = datetime.strptime(data_str, '%Y-%m-%d')
+                    mes_ano = data_obj.strftime('%Y-%m')
+                    por_mes[mes_ano] += valor
+                except:
+                    pass
+                
+                # Por pessoa (baseado nos donos da revisão)
+                for pessoa, percentual in donos.items():
+                    valor_pessoa = valor * (percentual / 100)
+                    por_pessoa[pessoa] += valor_pessoa
+                
+                # Por categoria
+                observacoes = transacao.get('observacoes', '')
+                categoria = 'Outros'
+                if 'Categoria:' in observacoes:
+                    try:
+                        categoria = observacoes.split('Categoria:')[1].split('|')[0].strip()
+                    except:
+                        pass
+                por_categoria[categoria] += valor
         
         # Ordena dados para gráficos
         meses_ordenados = sorted(por_mes.keys())
