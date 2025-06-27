@@ -167,9 +167,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Dados do backend
-    const dadosCategoria = {{ dados_categoria | tojsonfilter }};
-    const dadosMensais = {{ dados_mensais | tojsonfilter }};
-    const dadosPessoa = {{ dados_pessoa | tojsonfilter }};
+    const dadosCategoria = {{ dados_categoria | tojson }};
+    const dadosMensais = {{ dados_mensais | tojson }};
+    const dadosPessoa = {{ dados_pessoa | tojson }};
     
     // Cores personalizadas
     const coresSuaves = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#84cc16', '#f97316', '#ec4899', '#6b7280'];
