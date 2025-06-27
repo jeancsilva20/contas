@@ -580,6 +580,210 @@ def excluir_pendente():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erro ao excluir transação: {str(e)}'})
 
+@app.route('/listagens')
+def listagens():
+    """
+    Exibe listagem de transações revisadas com filtros
+    """
+    try:
+        import json
+        from collections import defaultdict
+        from datetime import datetime
+        
+        # Obtém filtros da query string
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim = request.args.get('data_fim', '')
+        responsavel = request.args.get('responsavel', '')
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Carrega transações para obter valores e datas
+        try:
+            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
+                transacoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            transacoes = []
+        
+        # Cria mapa de transações por hash
+        transacoes_map = {t['hash']: t for t in transacoes}
+        
+        # Lista para armazenar dados processados
+        listagem_dados = []
+        
+        # Processa cada revisão
+        for revisao in revisoes:
+            transacao = transacoes_map.get(revisao['hash'])
+            if not transacao:
+                continue
+            
+            # Aplica filtro de data
+            data_str = transacao['data']
+            if data_inicio and data_str < data_inicio:
+                continue
+            if data_fim and data_str > data_fim:
+                continue
+            
+            # Valor total da transação
+            valor_total = abs(transacao['valor'])
+            if transacao.get('tipo_movimento') == 'entrada':
+                valor_total = -valor_total
+            
+            # Distribui por responsável
+            donos = revisao.get('donos', {})
+            for pessoa, percentual in donos.items():
+                # Aplica filtro de responsável se especificado
+                if responsavel and pessoa != responsavel:
+                    continue
+                
+                valor_rateado = valor_total * (percentual / 100)
+                
+                item = {
+                    'data': data_str,
+                    'descricao': revisao.get('nova_descricao', transacao['descricao']),
+                    'valor': transacao['valor'],
+                    'fonte': transacao.get('fonte', ''),
+                    'observacoes': transacao.get('observacoes', ''),
+                    'valor_total': valor_total,
+                    'percentual_rateio': percentual,
+                    'valor_rateado': valor_rateado,
+                    'responsavel': pessoa,
+                    'tipo_movimento': transacao.get('tipo_movimento', 'saida')
+                }
+                
+                listagem_dados.append(item)
+        
+        # Ordena por data (mais recente primeiro) e depois por responsável
+        listagem_dados.sort(key=lambda x: (x['data'], x['responsavel']), reverse=True)
+        
+        # Obter lista de responsáveis únicos para o filtro
+        responsaveis_unicos = set()
+        for revisao in revisoes:
+            donos = revisao.get('donos', {})
+            responsaveis_unicos.update(donos.keys())
+        responsaveis_unicos = sorted(list(responsaveis_unicos))
+        
+        return render_template('listagens.html', 
+                             listagem_dados=listagem_dados,
+                             responsaveis_unicos=responsaveis_unicos,
+                             data_inicio=data_inicio,
+                             data_fim=data_fim,
+                             responsavel=responsavel)
+        
+    except Exception as e:
+        return f"Erro ao carregar listagens: {str(e)}", 500
+
+@app.route('/exportar_listagem_csv')
+def exportar_listagem_csv():
+    """
+    Exporta dados da listagem em formato CSV
+    """
+    try:
+        import json
+        import csv
+        from collections import defaultdict
+        from datetime import datetime
+        from flask import Response
+        import io
+        
+        # Obtém filtros da query string
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim = request.args.get('data_fim', '')
+        responsavel = request.args.get('responsavel', '')
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Carrega transações
+        try:
+            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
+                transacoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            transacoes = []
+        
+        # Cria mapa de transações por hash
+        transacoes_map = {t['hash']: t for t in transacoes}
+        
+        # Lista para armazenar dados para CSV
+        dados_csv = []
+        
+        for revisao in revisoes:
+            transacao = transacoes_map.get(revisao['hash'])
+            if not transacao:
+                continue
+            
+            # Aplica filtros de data
+            data_str = transacao['data']
+            if data_inicio and data_str < data_inicio:
+                continue
+            if data_fim and data_str > data_fim:
+                continue
+            
+            valor_total = abs(transacao['valor'])
+            if transacao.get('tipo_movimento') == 'entrada':
+                valor_total = -valor_total
+            
+            donos = revisao.get('donos', {})
+            
+            for pessoa, percentual in donos.items():
+                # Aplica filtro de pessoa se especificado
+                if responsavel and pessoa != responsavel:
+                    continue
+                
+                valor_rateado = valor_total * (percentual / 100)
+                
+                dados_csv.append({
+                    'Data': data_str,
+                    'Descrição': revisao.get('nova_descricao', transacao['descricao']),
+                    'Valor': f"R$ {transacao['valor']:.2f}",
+                    'Fonte': transacao.get('fonte', ''),
+                    'Observações': transacao.get('observacoes', ''),
+                    'Valor Total': f"R$ {valor_total:.2f}",
+                    '% Rateio': f"{percentual}%",
+                    'Valor Rateado': f"R$ {valor_rateado:.2f}",
+                    'Responsável': pessoa
+                })
+        
+        # Ordena por data
+        dados_csv.sort(key=lambda x: x['Data'], reverse=True)
+        
+        # Cria arquivo CSV em memória
+        output = io.StringIO()
+        if dados_csv:
+            fieldnames = ['Data', 'Descrição', 'Valor', 'Fonte', 'Observações', 'Valor Total', '% Rateio', 'Valor Rateado', 'Responsável']
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(dados_csv)
+        
+        # Prepara resposta
+        csv_data = output.getvalue()
+        output.close()
+        
+        # Define nome do arquivo
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        nome_arquivo = f"listagem_{timestamp}"
+        if responsavel:
+            nome_arquivo += f"_{responsavel.replace(' ', '_')}"
+        nome_arquivo += ".csv"
+        
+        # Retorna CSV como download
+        return Response(
+            csv_data,
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={nome_arquivo}'}
+        )
+        
+    except Exception as e:
+        return f"Erro ao exportar CSV: {str(e)}", 500
+
 @app.route('/exportar_rateio_csv')
 def exportar_rateio_csv():
     """
