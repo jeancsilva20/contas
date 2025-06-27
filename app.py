@@ -74,5 +74,70 @@ def process_upload():
         # Outros erros
         return jsonify({'success': False, 'message': f'Erro ao processar arquivo: {str(e)}'})
 
+@app.route('/salvar_revisao', methods=['POST'])
+def salvar_revisao():
+    """
+    Salva uma revisão de transação e remove ela dos pendentes
+    """
+    try:
+        import json
+        from datetime import datetime
+        
+        dados = request.get_json()
+        
+        # Validações básicas
+        if not dados or not dados.get('hash'):
+            return jsonify({'success': False, 'message': 'Dados inválidos'})
+        
+        # Validar percentuais
+        total_percentual = sum(dados.get('donos', {}).values())
+        if total_percentual != 100:
+            return jsonify({'success': False, 'message': 'O total dos percentuais deve ser 100%'})
+        
+        # Carrega revisões existentes
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Cria nova revisão
+        nova_revisao = {
+            'hash': dados['hash'],
+            'id_original': dados['id'],
+            'nova_descricao': dados['nova_descricao'],
+            'donos': dados['donos'],
+            'comentarios': dados['comentarios'],
+            'data_revisao': datetime.now().isoformat(),
+            'revisado_por': 'Usuario'  # Pode ser expandido para incluir autenticação
+        }
+        
+        # Adiciona à lista de revisões
+        revisoes.append(nova_revisao)
+        
+        # Salva revisões atualizadas
+        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
+            json.dump(revisoes, f, ensure_ascii=False, indent=2)
+        
+        # Remove transação dos pendentes
+        try:
+            with open('data/pendentes.json', 'r', encoding='utf-8') as f:
+                pendentes = json.load(f)
+            
+            # Filtra removendo a transação revisada
+            pendentes_atualizados = [p for p in pendentes if p.get('hash') != dados['hash']]
+            
+            # Salva pendentes atualizados
+            with open('data/pendentes.json', 'w', encoding='utf-8') as f:
+                json.dump(pendentes_atualizados, f, ensure_ascii=False, indent=2)
+        
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass  # Se não conseguir carregar pendentes, continua
+        
+        return jsonify({'success': True, 'message': 'Revisão salva com sucesso!'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro ao salvar revisão: {str(e)}'})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
