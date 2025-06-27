@@ -108,6 +108,37 @@
     </div>
 </div>
 
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel me-2"></i>Filtrar
+                    </button>
+                    <a href="/rateio" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-x-circle me-2"></i>Limpar
+                    </a>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button type="button" class="btn btn-success" onclick="exportarCSV()">
+                        <i class="bi bi-download me-2"></i>Exportar CSV
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% if total_transacoes > 0 %}
 <!-- Cards de Resumo -->
 <div class="row mb-5">
@@ -148,6 +179,7 @@
                             <th>Valor</th>
                             <th>% do Total</th>
                             <th>Proporção</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -174,6 +206,11 @@
                                          aria-valuemax="100">
                                     </div>
                                 </div>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="exportarCSVPessoa('{{ item.pessoa }}')">
+                                    <i class="bi bi-download"></i>
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -333,6 +370,30 @@ document.addEventListener('DOMContentLoaded', function() {
         chartRateio.resize();
     });
 });
+
+// Função para exportar CSV geral
+function exportarCSV() {
+    const dataInicio = document.getElementById('data_inicio').value;
+    const dataFim = document.getElementById('data_fim').value;
+    
+    let url = '/exportar_rateio_csv?';
+    if (dataInicio) url += `data_inicio=${dataInicio}&`;
+    if (dataFim) url += `data_fim=${dataFim}&`;
+    
+    window.open(url, '_blank');
+}
+
+// Função para exportar CSV de uma pessoa específica
+function exportarCSVPessoa(pessoa) {
+    const dataInicio = document.getElementById('data_inicio').value;
+    const dataFim = document.getElementById('data_fim').value;
+    
+    let url = `/exportar_rateio_csv?pessoa=${encodeURIComponent(pessoa)}&`;
+    if (dataInicio) url += `data_inicio=${dataInicio}&`;
+    if (dataFim) url += `data_fim=${dataFim}&`;
+    
+    window.open(url, '_blank');
+}
 </script>
 {% endif %}
 {% endblock %}

@@ -139,6 +139,11 @@ def resumo():
         from collections import defaultdict
         from datetime import datetime
         
+        # Obtém filtros da query string
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim = request.args.get('data_fim', '')
+        responsavel = request.args.get('responsavel', '')
+        
         # Carrega revisões
         try:
             with open('data/revisoes.json', 'r', encoding='utf-8') as f:
@@ -168,8 +173,20 @@ def resumo():
             if not transacao:
                 continue
             
-            valor = abs(transacao['valor'])  # Usa valor absoluto para soma
+            # Aplica filtro de data
             data_str = transacao['data']
+            if data_inicio and data_str < data_inicio:
+                continue
+            if data_fim and data_str > data_fim:
+                continue
+            
+            # Aplica filtro de responsável
+            if responsavel:
+                donos = revisao.get('donos', {})
+                if responsavel not in donos or donos[responsavel] == 0:
+                    continue
+            
+            valor = abs(transacao['valor'])  # Usa valor absoluto para soma
             
             # Total geral
             total_geral += valor
@@ -185,6 +202,9 @@ def resumo():
             # Por pessoa (baseado nos donos da revisão)
             donos = revisao.get('donos', {})
             for pessoa, percentual in donos.items():
+                # Se há filtro de responsável, só calcula para essa pessoa
+                if responsavel and pessoa != responsavel:
+                    continue
                 valor_pessoa = valor * (percentual / 100)
                 por_pessoa[pessoa] += valor_pessoa
             
@@ -206,12 +226,23 @@ def resumo():
         
         dados_pessoa = [{'pessoa': pessoa, 'valor': valor} for pessoa, valor in sorted(por_pessoa.items(), key=lambda x: x[1], reverse=True)]
         
+        # Obter lista de responsáveis únicos para o filtro
+        responsaveis_unicos = set()
+        for revisao in revisoes:
+            donos = revisao.get('donos', {})
+            responsaveis_unicos.update(donos.keys())
+        responsaveis_unicos = sorted(list(responsaveis_unicos))
+        
         return render_template('resumo.html', 
                              total_geral=total_geral,
                              dados_categoria=dados_categoria,
                              dados_mensais=dados_mensais,
                              dados_pessoa=dados_pessoa,
-                             total_revisoes=len(revisoes))
+                             total_revisoes=len(revisoes),
+                             responsaveis_unicos=responsaveis_unicos,
+                             data_inicio=data_inicio,
+                             data_fim=data_fim,
+                             responsavel=responsavel)
         
     except Exception as e:
         return f"Erro ao carregar resumo: {str(e)}", 500
@@ -224,6 +255,10 @@ def rateio():
     try:
         import json
         from collections import defaultdict
+        
+        # Obtém filtros da query string
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim = request.args.get('data_fim', '')
         
         # Carrega revisões
         try:
@@ -253,6 +288,13 @@ def rateio():
             if not transacao:
                 continue
             
+            # Aplica filtro de data
+            data_str = transacao['data']
+            if data_inicio and data_str < data_inicio:
+                continue
+            if data_fim and data_str > data_fim:
+                continue
+            
             valor = abs(transacao['valor'])  # Usa valor absoluto
             total_geral += valor
             total_transacoes += 1
@@ -276,7 +318,9 @@ def rateio():
         return render_template('rateio.html', 
                              dados_rateio=dados_rateio,
                              total_geral=total_geral,
-                             total_transacoes=total_transacoes)
+                             total_transacoes=total_transacoes,
+                             data_inicio=data_inicio,
+                             data_fim=data_fim)
         
     except Exception as e:
         return f"Erro ao carregar rateio: {str(e)}", 500
@@ -355,7 +399,8 @@ def processar_mapeamento():
             'Categoria', 
             'Descrição', 
             'Parcela', 
-            'Valor (em R$)'
+            'Valor (em R$)',
+            'Valor Recebido (em R$)'
         ]
         
         for coluna in colunas_obrigatorias:
@@ -470,6 +515,109 @@ def salvar_revisao():
         
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erro ao salvar revisão: {str(e)}'})
+
+@app.route('/exportar_rateio_csv')
+def exportar_rateio_csv():
+    """
+    Exporta dados do rateio em formato CSV
+    """
+    try:
+        import json
+        import csv
+        from collections import defaultdict
+        from datetime import datetime
+        from flask import Response
+        import io
+        
+        # Obtém filtros da query string
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim = request.args.get('data_fim', '')
+        pessoa_filtro = request.args.get('pessoa', '')
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Carrega transações
+        try:
+            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
+                transacoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            transacoes = []
+        
+        # Cria mapa de transações por hash
+        transacoes_map = {t['hash']: t for t in transacoes}
+        
+        # Lista para armazenar dados para CSV
+        dados_csv = []
+        
+        for revisao in revisoes:
+            transacao = transacoes_map.get(revisao['hash'])
+            if not transacao:
+                continue
+            
+            # Aplica filtros de data
+            data_str = transacao['data']
+            if data_inicio and data_str < data_inicio:
+                continue
+            if data_fim and data_str > data_fim:
+                continue
+            
+            valor = abs(transacao['valor'])
+            donos = revisao.get('donos', {})
+            
+            for pessoa, percentual in donos.items():
+                # Aplica filtro de pessoa se especificado
+                if pessoa_filtro and pessoa != pessoa_filtro:
+                    continue
+                
+                valor_pessoa = valor * (percentual / 100)
+                
+                dados_csv.append({
+                    'Data': data_str,
+                    'Descrição': transacao['descricao'],
+                    'Valor Total': f"R$ {valor:.2f}",
+                    'Pessoa': pessoa,
+                    'Percentual': f"{percentual}%",
+                    'Valor Atribuído': f"R$ {valor_pessoa:.2f}",
+                    'Fonte': transacao.get('fonte', ''),
+                    'Observações': transacao.get('observacoes', '')
+                })
+        
+        # Ordena por data
+        dados_csv.sort(key=lambda x: x['Data'])
+        
+        # Cria arquivo CSV em memória
+        output = io.StringIO()
+        if dados_csv:
+            fieldnames = ['Data', 'Descrição', 'Valor Total', 'Pessoa', 'Percentual', 'Valor Atribuído', 'Fonte', 'Observações']
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(dados_csv)
+        
+        # Prepara resposta
+        csv_data = output.getvalue()
+        output.close()
+        
+        # Define nome do arquivo
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        nome_arquivo = f"rateio_{timestamp}"
+        if pessoa_filtro:
+            nome_arquivo += f"_{pessoa_filtro.replace(' ', '_')}"
+        nome_arquivo += ".csv"
+        
+        # Retorna CSV como download
+        return Response(
+            csv_data,
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={nome_arquivo}'}
+        )
+        
+    except Exception as e:
+        return f"Erro ao exportar CSV: {str(e)}", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -24,7 +24,8 @@ class ImportadorTransacoes:
             'Categoria', 
             'Descrição', 
             'Parcela', 
-            'Valor (em R$)'
+            'Valor (em R$)',
+            'Valor Recebido (em R$)'
         ]
 
         try:
@@ -185,7 +186,8 @@ class ImportadorTransacoes:
             'Categoria', 
             'Descrição', 
             'Parcela', 
-            'Valor (em R$)'
+            'Valor (em R$)',
+            'Valor Recebido (em R$)'
         ]
         
         # Verifica se as colunas obrigatórias existem
@@ -211,18 +213,38 @@ class ImportadorTransacoes:
 
                 # Extrai e valida valor
                 valor_str = str(row['Valor (em R$)']).strip()
-                if not valor_str or valor_str.lower() in ['nan', '']:
-                    continue
-
-                # Remove aspas duplas se existirem
-                valor_str = valor_str.replace('"', '')
+                valor_recebido_str = str(row.get('Valor Recebido (em R$)', '')).strip()
                 
-                # Converte para float (pandas já trata decimal=',')
-                valor = float(valor_str)
-                valor_abs = abs(valor)
+                valor = 0
+                valor_recebido = 0
+                tipo_movimento = 'saida'  # Padrão para cartão
+                
+                # Processa valor de saída
+                if valor_str and valor_str.lower() not in ['nan', '']:
+                    valor_str = valor_str.replace('"', '')
+                    valor = float(valor_str)
+                
+                # Processa valor recebido (estornos)
+                if valor_recebido_str and valor_recebido_str.lower() not in ['nan', '']:
+                    valor_recebido_str = valor_recebido_str.replace('"', '')
+                    valor_recebido = float(valor_recebido_str)
+                
+                # Determina valor final e tipo de movimento
+                if valor_recebido > 0:
+                    # É um estorno/entrada
+                    valor_final = valor_recebido
+                    tipo_movimento = 'entrada'
+                elif valor < 0:
+                    # Valor negativo no cartão também é estorno
+                    valor_final = abs(valor)
+                    tipo_movimento = 'entrada'
+                else:
+                    # Saída normal
+                    valor_final = abs(valor)
+                    tipo_movimento = 'saida'
 
                 # Pula valores zerados
-                if valor_abs == 0:
+                if valor_final == 0:
                     continue
 
                 # Extrai informações adicionais
@@ -249,7 +271,7 @@ class ImportadorTransacoes:
                 observacoes_str = ' | '.join(observacoes) if observacoes else ''
 
                 # Gera hash único para identificar duplicatas
-                hash_transacao = gerar_hash_transacao(data, descricao, valor_abs, 'cartao')
+                hash_transacao = gerar_hash_transacao(data, descricao, valor_final, 'cartao')
 
                 # Verifica se transação já existe
                 if transacao_existe(hash_transacao):
@@ -261,8 +283,8 @@ class ImportadorTransacoes:
                     'tipo': 'cartao',
                     'data': data.strftime('%Y-%m-%d'),
                     'descricao': descricao,
-                    'valor': valor_abs,
-                    'tipo_movimento': 'saida',  # Cartão sempre é saída
+                    'valor': valor_final,
+                    'tipo_movimento': tipo_movimento,
                     'fonte': fonte,
                     'hash': hash_transacao,
                     'observacoes': observacoes_str
