@@ -1,1 +1,4 @@
 Flask
+msoffcrypto-tool
+openpyxl
+pandas
