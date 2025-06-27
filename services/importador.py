@@ -28,8 +28,25 @@ class ImportadorTransacoes:
         ]
 
         try:
-            # Lê apenas o cabeçalho do CSV
-            df = pd.read_csv(arquivo, sep=';', decimal=',', encoding='utf-8', nrows=0)
+            # Tenta diferentes codificações
+            encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+            df = None
+            
+            for encoding in encodings:
+                try:
+                    # Reset do arquivo se for um objeto de arquivo
+                    if hasattr(arquivo, 'seek'):
+                        arquivo.seek(0)
+                    
+                    # Lê apenas o cabeçalho do CSV
+                    df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding, nrows=0)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if df is None:
+                raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
+            
             colunas_encontradas = df.columns.tolist()
             
             # Reset do arquivo se for um objeto de arquivo
@@ -66,8 +83,24 @@ class ImportadorTransacoes:
         Processa arquivo CSV com mapeamento de colunas personalizado
         """
         try:
-            # Lê o CSV
-            df = pd.read_csv(arquivo, sep=';', decimal=',', encoding='utf-8')
+            # Tenta diferentes codificações
+            encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+            df = None
+            
+            for encoding in encodings:
+                try:
+                    # Reset do arquivo se for um objeto de arquivo
+                    if hasattr(arquivo, 'seek'):
+                        arquivo.seek(0)
+                    
+                    # Lê o CSV
+                    df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if df is None:
+                raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
             
             # Aplica o mapeamento de colunas
             df_mapeado = self._aplicar_mapeamento(df, mapeamento)
@@ -113,8 +146,24 @@ class ImportadorTransacoes:
         Processa arquivo CSV do cartão de crédito com novo padrão
         """
         try:
-            # Lê o CSV com separador ponto e vírgula e decimal vírgula
-            df = pd.read_csv(arquivo, sep=';', decimal=',', encoding='utf-8')
+            # Tenta diferentes codificações
+            encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+            df = None
+            
+            for encoding in encodings:
+                try:
+                    # Reset do arquivo se for um objeto de arquivo
+                    if hasattr(arquivo, 'seek'):
+                        arquivo.seek(0)
+                    
+                    # Lê o CSV com separador ponto e vírgula e decimal vírgula
+                    df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if df is None:
+                raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
 
             # Processa as transações
             return self._extrair_transacoes_cartao(df)
