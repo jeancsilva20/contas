@@ -32,5 +32,38 @@
     "comentarios": "",
     "data_revisao": "2025-06-27T18:05:31.541135",
     "revisado_por": "Usuario"
+  },
+  {
+    "hash": "411b52865219d704acfd5acfc83194d2de73b41d55138372287b578d14f059c8",
+    "id_original": "cartao_1751044823_79",
+    "nova_descricao": "WINDSOR FLORIDA HOTEL",
+    "donos": {
+      "Jean": 100
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T18:13:43.805608",
+    "revisado_por": "Usuario"
+  },
+  {
+    "hash": "8aed672197854f94d9c500ebac8f24f8c14aa93d0e6624e93d31bdc75b846ac2",
+    "id_original": "cartao_1751044823_73",
+    "nova_descricao": "AMAZONPRIMEBR",
+    "donos": {
+      "Jean": 100
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T18:15:04.618400",
+    "revisado_por": "Usuario"
+  },
+  {
+    "hash": "f2165615e407ae2c525c916e613f0758940fbb070ab658334f9cfa289dd9a852",
+    "id_original": "cartao_1751044823_8",
+    "nova_descricao": "MERCADOLIVRE*COCHILAR",
+    "donos": {
+      "Jean": 100
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T18:27:27.286967",
+    "revisado_por": "Usuario"
   }
 ]

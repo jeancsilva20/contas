@@ -55,17 +55,6 @@
     "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA"
   },
   {
-    "id": "cartao_1751044823_8",
-    "tipo": "cartao",
-    "data": "2024-11-01",
-    "descricao": "MERCADOLIVRE*COCHILAR",
-    "valor": 111.03,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "f2165615e407ae2c525c916e613f0758940fbb070ab658334f9cfa289dd9a852",
-    "observacoes": "Parcela: 7/10 | Categoria: Casa / Escritório Mobiliário | Cartão: JEAN C SILVA"
-  },
-  {
     "id": "cartao_1751044823_9",
     "tipo": "cartao",
     "data": "2024-12-01",
@@ -770,17 +759,6 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA"
   },
   {
-    "id": "cartao_1751044823_73",
-    "tipo": "cartao",
-    "data": "2025-05-31",
-    "descricao": "AMAZONPRIMEBR",
-    "valor": 19.9,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "8aed672197854f94d9c500ebac8f24f8c14aa93d0e6624e93d31bdc75b846ac2",
-    "observacoes": "Parcela: Única | Categoria: Marketing Direto | Cartão: JEAN C SILVA"
-  },
-  {
     "id": "cartao_1751044823_74",
     "tipo": "cartao",
     "data": "2025-06-01",
@@ -823,17 +801,6 @@
     "fonte": "Cartão de Crédito",
     "hash": "6339819d1f11ee7fda0cefc338805177bc9c999eaab39e16ea3077a085f7c9e8",
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA"
-  },
-  {
-    "id": "cartao_1751044823_79",
-    "tipo": "cartao",
-    "data": "2025-06-02",
-    "descricao": "WINDSOR FLORIDA HOTEL",
-    "valor": 42.9,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "411b52865219d704acfd5acfc83194d2de73b41d55138372287b578d14f059c8",
-    "observacoes": "Parcela: Única | Categoria: T&E | Cartão: JEAN C SILVA"
   },
   {
     "id": "cartao_1751044823_80",
