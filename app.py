@@ -74,6 +74,93 @@ def process_upload():
         # Outros erros
         return jsonify({'success': False, 'message': f'Erro ao processar arquivo: {str(e)}'})
 
+@app.route('/resumo')
+def resumo():
+    """
+    Exibe painel com resumo dos dados revisados
+    """
+    try:
+        import json
+        from collections import defaultdict
+        from datetime import datetime
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Carrega transações para obter valores e datas
+        try:
+            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
+                transacoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            transacoes = []
+        
+        # Cria mapa de transações por hash
+        transacoes_map = {t['hash']: t for t in transacoes}
+        
+        # Análise dos dados
+        total_geral = 0
+        por_categoria = defaultdict(float)
+        por_mes = defaultdict(float)
+        por_pessoa = defaultdict(float)
+        
+        for revisao in revisoes:
+            # Busca dados da transação original
+            transacao = transacoes_map.get(revisao['hash'])
+            if not transacao:
+                continue
+            
+            valor = abs(transacao['valor'])  # Usa valor absoluto para soma
+            data_str = transacao['data']
+            
+            # Total geral
+            total_geral += valor
+            
+            # Por mês
+            try:
+                data_obj = datetime.strptime(data_str, '%Y-%m-%d')
+                mes_ano = data_obj.strftime('%Y-%m')
+                por_mes[mes_ano] += valor
+            except:
+                pass
+            
+            # Por pessoa (baseado nos donos da revisão)
+            donos = revisao.get('donos', {})
+            for pessoa, percentual in donos.items():
+                valor_pessoa = valor * (percentual / 100)
+                por_pessoa[pessoa] += valor_pessoa
+            
+            # Por categoria (extraída das observações da transação)
+            observacoes = transacao.get('observacoes', '')
+            categoria = 'Outros'
+            if 'Categoria:' in observacoes:
+                try:
+                    categoria = observacoes.split('Categoria:')[1].split('|')[0].strip()
+                except:
+                    pass
+            por_categoria[categoria] += valor
+        
+        # Ordena dados para gráficos
+        meses_ordenados = sorted(por_mes.keys())
+        dados_mensais = [{'mes': mes, 'valor': por_mes[mes]} for mes in meses_ordenados]
+        
+        dados_categoria = [{'categoria': cat, 'valor': valor} for cat, valor in sorted(por_categoria.items(), key=lambda x: x[1], reverse=True)]
+        
+        dados_pessoa = [{'pessoa': pessoa, 'valor': valor} for pessoa, valor in sorted(por_pessoa.items(), key=lambda x: x[1], reverse=True)]
+        
+        return render_template('resumo.html', 
+                             total_geral=total_geral,
+                             dados_categoria=dados_categoria,
+                             dados_mensais=dados_mensais,
+                             dados_pessoa=dados_pessoa,
+                             total_revisoes=len(revisoes))
+        
+    except Exception as e:
+        return f"Erro ao carregar resumo: {str(e)}", 500
+
 @app.route('/salvar_revisao', methods=['POST'])
 def salvar_revisao():
     """

@@ -1,0 +1,359 @@
+
+{% extends "base.html" %}
+
+{% block title %}Resumo de Gastos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .chart-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .no-data i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="text-center mb-4">
+            <i class="bi bi-bar-chart me-2"></i>
+            Resumo Financeiro
+        </h2>
+    </div>
+</div>
+
+{% if total_revisoes > 0 %}
+<!-- Cards de Métricas -->
+<div class="row mb-5">
+    <div class="col-md-3 mb-3">
+        <div class="metric-card">
+            <div class="metric-value">R$ {{ "%.2f"|format(total_geral) }}</div>
+            <div class="metric-label">Total Gasto</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="metric-card">
+            <div class="metric-value">{{ total_revisoes }}</div>
+            <div class="metric-label">Transações</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="metric-card">
+            <div class="metric-value">{{ dados_categoria|length }}</div>
+            <div class="metric-label">Categorias</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="metric-card">
+            <div class="metric-value">R$ {{ "%.2f"|format(total_geral / total_revisoes) }}</div>
+            <div class="metric-label">Média/Transação</div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row">
+    <!-- Gráfico de Pizza - Categorias -->
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-pie-chart me-2"></i>
+                Gastos por Categoria
+            </div>
+            <div id="chart-categoria" style="height: 400px;"></div>
+        </div>
+    </div>
+    
+    <!-- Gráfico de Pizza - Pessoas -->
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-person-circle me-2"></i>
+                Gastos por Pessoa
+            </div>
+            <div id="chart-pessoa" style="height: 400px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de Linha - Evolução Mensal -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-graph-up me-2"></i>
+                Evolução Mensal dos Gastos
+            </div>
+            <div id="chart-mensal" style="height: 400px;"></div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Estado Vazio -->
+<div class="row">
+    <div class="col-12">
+        <div class="chart-container">
+            <div class="no-data">
+                <i class="bi bi-clipboard-data"></i>
+                <h4>Nenhum dado disponível</h4>
+                <p class="mb-4">Ainda não há transações revisadas para exibir no resumo.</p>
+                <a href="/pendentes" class="btn btn-primary">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Ver Pendentes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+
+{% if total_revisoes > 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dados do backend
+    const dadosCategoria = {{ dados_categoria | tojsonfilter }};
+    const dadosMensais = {{ dados_mensais | tojsonfilter }};
+    const dadosPessoa = {{ dados_pessoa | tojsonfilter }};
+    
+    // Cores personalizadas
+    const coresSuaves = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#84cc16', '#f97316', '#ec4899', '#6b7280'];
+    
+    // Gráfico de Pizza - Categorias
+    const chartCategoria = echarts.init(document.getElementById('chart-categoria'));
+    const optionCategoria = {
+        tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: R$ {c} ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left',
+            textStyle: {
+                fontSize: 12
+            }
+        },
+        series: [{
+            name: 'Gastos',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            center: ['60%', '50%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            label: {
+                show: false,
+                position: 'center'
+            },
+            emphasis: {
+                label: {
+                    show: true,
+                    fontSize: '18',
+                    fontWeight: 'bold'
+                }
+            },
+            labelLine: {
+                show: false
+            },
+            data: dadosCategoria.map((item, index) => ({
+                value: item.valor,
+                name: item.categoria,
+                itemStyle: {
+                    color: coresSuaves[index % coresSuaves.length]
+                }
+            }))
+        }]
+    };
+    chartCategoria.setOption(optionCategoria);
+    
+    // Gráfico de Pizza - Pessoas
+    const chartPessoa = echarts.init(document.getElementById('chart-pessoa'));
+    const optionPessoa = {
+        tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: R$ {c} ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left',
+            textStyle: {
+                fontSize: 12
+            }
+        },
+        series: [{
+            name: 'Gastos',
+            type: 'pie',
+            radius: ['40%', '70%'],
+            center: ['60%', '50%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            label: {
+                show: false,
+                position: 'center'
+            },
+            emphasis: {
+                label: {
+                    show: true,
+                    fontSize: '18',
+                    fontWeight: 'bold'
+                }
+            },
+            labelLine: {
+                show: false
+            },
+            data: dadosPessoa.map((item, index) => ({
+                value: item.valor,
+                name: item.pessoa,
+                itemStyle: {
+                    color: coresSuaves[index % coresSuaves.length]
+                }
+            }))
+        }]
+    };
+    chartPessoa.setOption(optionPessoa);
+    
+    // Gráfico de Linha - Evolução Mensal
+    const chartMensal = echarts.init(document.getElementById('chart-mensal'));
+    const optionMensal = {
+        tooltip: {
+            trigger: 'axis',
+            formatter: 'Mês: {b}<br/>Valor: R$ {c}'
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: dadosMensais.map(item => item.mes),
+            axisLine: {
+                lineStyle: {
+                    color: '#6b7280'
+                }
+            }
+        },
+        yAxis: {
+            type: 'value',
+            axisLabel: {
+                formatter: 'R$ {value}'
+            },
+            axisLine: {
+                lineStyle: {
+                    color: '#6b7280'
+                }
+            },
+            splitLine: {
+                lineStyle: {
+                    color: '#e5e7eb'
+                }
+            }
+        },
+        series: [{
+            name: 'Gastos',
+            type: 'line',
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 8,
+            lineStyle: {
+                color: '#6366f1',
+                width: 3
+            },
+            itemStyle: {
+                color: '#6366f1',
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            areaStyle: {
+                color: {
+                    type: 'linear',
+                    x: 0,
+                    y: 0,
+                    x2: 0,
+                    y2: 1,
+                    colorStops: [{
+                        offset: 0, color: 'rgba(99, 102, 241, 0.4)'
+                    }, {
+                        offset: 1, color: 'rgba(99, 102, 241, 0.1)'
+                    }]
+                }
+            },
+            data: dadosMensais.map(item => item.valor)
+        }]
+    };
+    chartMensal.setOption(optionMensal);
+    
+    // Responsividade
+    window.addEventListener('resize', function() {
+        chartCategoria.resize();
+        chartPessoa.resize();
+        chartMensal.resize();
+    });
+});
+</script>
+{% endif %}
+{% endblock %}
