@@ -814,17 +814,6 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA"
   },
   {
-    "id": "cartao_1751044823_77",
-    "tipo": "cartao",
-    "data": "2025-06-02",
-    "descricao": "BREWTECO TERRACO",
-    "valor": 106.0,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "07709aa39a7a860faf73005475e4a134083e7318fbbc7a51d87c7f87848da09a",
-    "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA"
-  },
-  {
     "id": "cartao_1751044823_78",
     "tipo": "cartao",
     "data": "2025-06-02",
