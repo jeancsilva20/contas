@@ -1,0 +1,125 @@
+A estrutura base já está criada, mas a lógica de importação de arquivos .xlsx e .csv precisa ser finalizada. O objetivo desta etapa é garantir que o usuário consiga importar faturas de cartão ou extratos bancários protegidos por senha, processar os lançamentos, evitar duplicações e gerar arquivos transacoes.json e pendentes.json com base nas regras definidas.
+
+Fluxo geral esperado no sistema:
+
+O usuário acessa a página /upload.
+
+Ele seleciona um arquivo .xlsx ou .csv usando o input de arquivo.
+
+Ele insere a senha no campo apropriado (obrigatória para .xlsx).
+
+Ele clica no botão "Importar".
+
+O sistema exibe um loading com Notiflix.
+
+O sistema processa o arquivo e exibe um resumo via Notiflix, como:
+
+“Importação concluída: 42 novas transações, 27 pendentes para revisão”
+
+Ou, em caso de erro: “Erro: senha inválida ou formato de arquivo não reconhecido”
+
+Expectativa do backend:
+
+Atualizar o app.py e a classe ImportadorTransacoes em services/importador.py com os seguintes comportamentos:
+
+1. Identificação do tipo de arquivo:
+Ao processar o arquivo importado, detectar se é uma fatura de cartão ou extrato bancário com base nas colunas.
+
+Formato esperado da fatura de cartão de crédito (planilha XLSX):
+
+Data de compra
+
+Nome no cartão
+
+Final do Cartão
+
+Categoria
+
+Descrição
+
+Parcela
+
+Valor (em US$)
+
+Cotação (em R$)
+
+Valor (em R$)
+
+Formato esperado do extrato bancário (planilha XLSX):
+
+Data Lançamento
+
+Data Contábil
+
+Título
+
+Descrição
+
+Entrada(R$)
+
+Saída(R$)
+
+Saldo do Dia(R$)
+
+Se for .csv, o sistema deve reconhecer automaticamente com base nos cabeçalhos similares e tratar com pandas.read_csv().
+
+2. Extração e padronização dos dados:
+Para cada transação importada, padronizar os campos da seguinte forma:
+
+id (gerado automaticamente)
+
+data: data de compra (cartão) ou data de lançamento (extrato)
+
+descricao: campo "Descrição"
+
+valor: usar “Valor (em R$)” (cartão) ou o valor de entrada/saída (extrato)
+
+tipo_movimento: "entrada" ou "saida"
+
+tipo: "cartao" ou "conta"
+
+fonte: nome do cartão ou da conta (ex: "C6 Carbon", "C6 Conta Corrente")
+
+observacoes: parcelas, título, ou outros dados complementares
+
+hash: SHA256 gerado com base em data + valor + descricao + tipo
+
+3. Verificação de duplicatas:
+
+Verificar se o hash da transação já existe no arquivo data/transacoes.json.
+
+Se já existir, ignorar (não deve ser duplicado).
+
+Se não existir, incluir no final de transacoes.json.
+
+4. Gerar fila de pendentes:
+
+Se a transação for do tipo "saida" e não estiver em revisoes.json, incluir também em pendentes.json para futura revisão.
+
+5. Geração de hash:
+Implementar função em utils/hash.py que gere um hash SHA256 a partir dos campos: data, valor, descricao, tipo.
+
+6. Mensagens de retorno:
+
+Enviar via JSON para o frontend o número de transações novas adicionadas e quantas foram enviadas para revisão.
+
+Em caso de erro (ex: senha errada, arquivo malformado), retornar status false com uma mensagem clara.
+
+7. Frontend (em upload.html):
+
+O botão de envio já deve estar conectado com a rota /process_upload (método POST).
+
+Após envio, exibir loading com Notiflix.Loading.standard("Importando...")
+
+Exibir resultado com Notiflix.Notify.success(...) ou erro com Notiflix.Notify.failure(...)
+
+Limpar os campos após o sucesso da operação
+
+8. Manutenção dos arquivos JSON:
+
+Os arquivos transacoes.json, pendentes.json e revisoes.json devem ser criados automaticamente, se não existirem, e salvos com indentação para facilitar leitura.
+
+Não usar banco de dados. Todo armazenamento deve ser feito com arquivos locais .json dentro do diretório data/.
+
+Resumo final:
+Ao concluir esta etapa, o sistema deve importar corretamente arquivos protegidos por senha, extrair as transações de forma padronizada, evitar duplicações, gerar os arquivos JSON de forma confiável, e exibir feedbacks visuais claros no frontend usando Notiflix.

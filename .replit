@@ -2,6 +2,7 @@ modules = ["web", "python-3.12", "nodejs-20"]
 run = "python app.py"
 [nix]
 channel = "stable-24_05"
+packages = ["glibcLocales"]
 
 [workflows]
 runButton = "Run Flask App"
