@@ -196,7 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
         Notiflix.Loading.circle('Processando arquivo...');
 
         // Envia arquivo
-        const formData = new FormData();
         formData.append('file', fileInput.files[0]);
         formData.append('fonte', fonteSelect.value);
 
