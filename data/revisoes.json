@@ -1,25 +1,38 @@
 [
   {
-    "hash": "98909b422ce39696db98c3ed163e2d35ac3f8f79b68ad2b2c37a0d6c2c2c64d2",
-    "id_original": "cartao_1751060452_75",
-    "nova_descricao": "PADARIA E ROTISSERIA",
-    "donos": {
-      "Jean": 50,
-      "Tati": 50
-    },
-    "comentarios": "",
-    "data_revisao": "2025-06-27T21:41:34.989950",
-    "revisado_por": "Usuario"
-  },
-  {
-    "hash": "07709aa39a7a860faf73005475e4a134083e7318fbbc7a51d87c7f87848da09a",
-    "id_original": "cartao_1751060452_76",
-    "nova_descricao": "BREWTECO TERRACO",
+    "hash": "4998811c567aeb5fdc2adf43fad5ea2eaba660f0a4cd9ac01bfb368021fda4a6",
+    "id_original": "cartao_1751061347_81",
+    "nova_descricao": "RAIA169",
     "donos": {
       "Jean": 100
     },
     "comentarios": "",
-    "data_revisao": "2025-06-27T21:41:41.234899",
+    "data_revisao": "2025-06-27T21:56:10.096525",
+    "revisado_por": "Usuario"
+  },
+  {
+    "hash": "98909b422ce39696db98c3ed163e2d35ac3f8f79b68ad2b2c37a0d6c2c2c64d2",
+    "id_original": "cartao_1751061347_75",
+    "nova_descricao": "PADARIA E ROTISSERIA",
+    "donos": {
+      "Jean": 50,
+      "João Batista": 50
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T21:56:16.695129",
+    "revisado_por": "Usuario"
+  },
+  {
+    "hash": "411b52865219d704acfd5acfc83194d2de73b41d55138372287b578d14f059c8",
+    "id_original": "cartao_1751061347_78",
+    "nova_descricao": "WINDSOR FLORIDA HOTEL",
+    "donos": {
+      "Jean": 34,
+      "Juliano": 33,
+      "Tati": 33
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T21:56:29.854588",
     "revisado_por": "Usuario"
   }
 ]

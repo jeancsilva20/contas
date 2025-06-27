@@ -1,6 +1,6 @@
 [
   {
-    "id": "cartao_1751060452_0",
+    "id": "cartao_1751061347_0",
     "tipo": "cartao",
     "data": "2025-04-07",
     "descricao": "AZUL WE*EF3ZQYSILVA",
@@ -11,18 +11,18 @@
     "observacoes": "Parcela: 02/fev | Categoria: T&E Companhia aérea | Cartão: JEAN C SILVA | Final: 4447.0"
   },
   {
-    "id": "cartao_1751060452_1",
+    "id": "cartao_1751061347_1",
     "tipo": "cartao",
     "data": "2025-04-14",
     "descricao": "MULTIUTILSTORE",
-    "valor": 139.73,
+    "valor": -139.73,
     "tipo_movimento": "entrada",
     "fonte": "Cartão C6",
     "hash": "e1a469fd2170ed5cd27bc29e92a6cad989f804d345de0c219bca24a9a8ca7480",
     "observacoes": "Parcela: 02/fev | Categoria: Departamento / Desconto | Cartão: JEAN C SILVA | Final: 6071.0"
   },
   {
-    "id": "cartao_1751060452_2",
+    "id": "cartao_1751061347_2",
     "tipo": "cartao",
     "data": "2025-05-03",
     "descricao": "LATAM AIR",
@@ -33,7 +33,7 @@
     "observacoes": "Parcela: Única | Categoria: T&E Companhia aérea | Cartão: JEAN C SILVA | Final: 6071.0"
   },
   {
-    "id": "cartao_1751060452_3",
+    "id": "cartao_1751061347_3",
     "tipo": "cartao",
     "data": "2025-05-06",
     "descricao": "MICROSOFT*STORE",
@@ -44,7 +44,7 @@
     "observacoes": "Parcela: Única | Categoria: Entretenimento | Cartão: JEAN C SILVA | Final: 6071.0"
   },
   {
-    "id": "cartao_1751060452_4",
+    "id": "cartao_1751061347_4",
     "tipo": "cartao",
     "data": "2025-05-29",
     "descricao": "OPENAI                 +1",
@@ -55,7 +55,7 @@
     "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA | Final: 6071.0"
   },
   {
-    "id": "cartao_1751060452_5",
+    "id": "cartao_1751061347_5",
     "tipo": "cartao",
     "data": "2025-05-29",
     "descricao": "OPENAI                 +1",
@@ -66,7 +66,7 @@
     "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA | Final: 6071.0"
   },
   {
-    "id": "cartao_1751060452_6",
+    "id": "cartao_1751061347_6",
     "tipo": "cartao",
     "data": "2025-05-29",
     "descricao": "OPENAI                 +1",
@@ -77,7 +77,7 @@
     "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA | Final: 6071.0"
   },
   {
-    "id": "cartao_1751060452_7",
+    "id": "cartao_1751061347_7",
     "tipo": "cartao",
     "data": "2025-05-29",
     "descricao": "OPENAI                 +1",
@@ -88,7 +88,7 @@
     "observacoes": "Parcela: Única | Categoria: Elétrico | Cartão: JEAN C SILVA | Final: 6071.0"
   },
   {
-    "id": "cartao_1751060452_8",
+    "id": "cartao_1751061347_8",
     "tipo": "cartao",
     "data": "2024-11-01",
     "descricao": "MERCADOLIVRE*COCHILAR",
@@ -99,7 +99,7 @@
     "observacoes": "Parcela: 07/out | Categoria: Casa / Escritório Mobiliário | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_9",
+    "id": "cartao_1751061347_9",
     "tipo": "cartao",
     "data": "2024-12-01",
     "descricao": "AMAZON BR",
@@ -110,7 +110,7 @@
     "observacoes": "Parcela: 07/out | Categoria: Departamento / Desconto | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_10",
+    "id": "cartao_1751061347_10",
     "tipo": "cartao",
     "data": "2025-01-31",
     "descricao": "MERCADOLIVRE*3PRODUTO",
@@ -121,7 +121,7 @@
     "observacoes": "Parcela: 05/mai | Categoria: Casa / Escritório Mobiliário | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_11",
+    "id": "cartao_1751061347_11",
     "tipo": "cartao",
     "data": "2025-02-02",
     "descricao": "AMAZON MARKETPLACE",
@@ -132,7 +132,7 @@
     "observacoes": "Parcela: 05/out | Categoria: Departamento / Desconto | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_12",
+    "id": "cartao_1751061347_12",
     "tipo": "cartao",
     "data": "2025-03-14",
     "descricao": "TIM SA",
@@ -143,7 +143,7 @@
     "observacoes": "Parcela: 03/abr | Categoria: Serviços de telecomunicações | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_13",
+    "id": "cartao_1751061347_13",
     "tipo": "cartao",
     "data": "2025-05-02",
     "descricao": "NOVO EMPORIO RURAL",
@@ -154,7 +154,7 @@
     "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_14",
+    "id": "cartao_1751061347_14",
     "tipo": "cartao",
     "data": "2025-05-02",
     "descricao": "DROGARIA TOTAL UNIDAD",
@@ -165,7 +165,7 @@
     "observacoes": "Parcela: Única | Categoria: Assistência médica e odontológica | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_15",
+    "id": "cartao_1751061347_15",
     "tipo": "cartao",
     "data": "2025-05-02",
     "descricao": "NOVO EMPORIO RURAL",
@@ -176,7 +176,7 @@
     "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_16",
+    "id": "cartao_1751061347_16",
     "tipo": "cartao",
     "data": "2025-05-03",
     "descricao": "COMERCIO DE CONFECCOE",
@@ -187,7 +187,7 @@
     "observacoes": "Parcela: Única | Categoria: Vestuário / Roupas | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_17",
+    "id": "cartao_1751061347_17",
     "tipo": "cartao",
     "data": "2025-05-05",
     "descricao": "IFD*DANILO BARBOSA CAC",
@@ -198,7 +198,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_18",
+    "id": "cartao_1751061347_18",
     "tipo": "cartao",
     "data": "2025-05-06",
     "descricao": "IFD*SILVEIRA  LIMA BAR",
@@ -209,7 +209,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_19",
+    "id": "cartao_1751061347_19",
     "tipo": "cartao",
     "data": "2025-05-06",
     "descricao": "DAYANEREZENDEMOLI",
@@ -220,7 +220,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_20",
+    "id": "cartao_1751061347_20",
     "tipo": "cartao",
     "data": "2025-05-06",
     "descricao": "IFD*OUTBACK STEAKHOUSE",
@@ -231,7 +231,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_21",
+    "id": "cartao_1751061347_21",
     "tipo": "cartao",
     "data": "2025-05-06",
     "descricao": "GOOGLE FACEBOOK",
@@ -242,7 +242,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_22",
+    "id": "cartao_1751061347_22",
     "tipo": "cartao",
     "data": "2025-05-07",
     "descricao": "POSTO VARANDA MOGI",
@@ -253,7 +253,7 @@
     "observacoes": "Parcela: Única | Categoria: Relacionados a Automotivo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_23",
+    "id": "cartao_1751061347_23",
     "tipo": "cartao",
     "data": "2025-05-07",
     "descricao": "IFD*SILVEIRA  LIMA BAR",
@@ -264,7 +264,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_24",
+    "id": "cartao_1751061347_24",
     "tipo": "cartao",
     "data": "2025-05-07",
     "descricao": "ROSMARA DOS SANTOS",
@@ -275,7 +275,7 @@
     "observacoes": "Parcela: Única | Categoria: Serviços Profissionais | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_25",
+    "id": "cartao_1751061347_25",
     "tipo": "cartao",
     "data": "2025-05-07",
     "descricao": "LABORATORIO",
@@ -286,7 +286,7 @@
     "observacoes": "Parcela: Única | Categoria: Serviços Profissionais | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_26",
+    "id": "cartao_1751061347_26",
     "tipo": "cartao",
     "data": "2025-05-07",
     "descricao": "COBASI CAMBUI CAMPINAS",
@@ -297,7 +297,7 @@
     "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_27",
+    "id": "cartao_1751061347_27",
     "tipo": "cartao",
     "data": "2025-05-07",
     "descricao": "FILIAL 269 DROGAL CAMP",
@@ -308,7 +308,7 @@
     "observacoes": "Parcela: Única | Categoria: Assistência médica e odontológica | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_28",
+    "id": "cartao_1751061347_28",
     "tipo": "cartao",
     "data": "2025-05-08",
     "descricao": "POSTO NOSSA SENHORA DE",
@@ -319,7 +319,7 @@
     "observacoes": "Parcela: Única | Categoria: Relacionados a Automotivo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_29",
+    "id": "cartao_1751061347_29",
     "tipo": "cartao",
     "data": "2025-05-08",
     "descricao": "PANIFICADORA NUCCI",
@@ -330,7 +330,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_30",
+    "id": "cartao_1751061347_30",
     "tipo": "cartao",
     "data": "2025-05-09",
     "descricao": "DAYANEREZENDEMOLI",
@@ -341,7 +341,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_31",
+    "id": "cartao_1751061347_31",
     "tipo": "cartao",
     "data": "2025-05-09",
     "descricao": "HEALTHMONEY",
@@ -352,7 +352,7 @@
     "observacoes": "Parcela: Única | Categoria: Serviços pessoais | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_32",
+    "id": "cartao_1751061347_32",
     "tipo": "cartao",
     "data": "2025-05-10",
     "descricao": "PETZ CAMPINAS NORTE SU",
@@ -363,7 +363,7 @@
     "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_33",
+    "id": "cartao_1751061347_33",
     "tipo": "cartao",
     "data": "2025-05-10",
     "descricao": "REIDOJOELHO",
@@ -374,7 +374,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_34",
+    "id": "cartao_1751061347_34",
     "tipo": "cartao",
     "data": "2025-05-10",
     "descricao": "DAYANEREZENDEMOLI",
@@ -385,7 +385,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_35",
+    "id": "cartao_1751061347_35",
     "tipo": "cartao",
     "data": "2025-05-10",
     "descricao": "PETZ CAMPINAS NORTE SU",
@@ -396,7 +396,7 @@
     "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_36",
+    "id": "cartao_1751061347_36",
     "tipo": "cartao",
     "data": "2025-05-11",
     "descricao": "GOOGLE YOUTUBE",
@@ -407,7 +407,7 @@
     "observacoes": "Parcela: Única | Categoria: Entretenimento | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_37",
+    "id": "cartao_1751061347_37",
     "tipo": "cartao",
     "data": "2025-05-16",
     "descricao": "IFD*IFOOD CLUB",
@@ -418,7 +418,7 @@
     "observacoes": "Parcela: Única | Categoria: Associação | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_38",
+    "id": "cartao_1751061347_38",
     "tipo": "cartao",
     "data": "2025-05-17",
     "descricao": "UBER UBER *TRIP HELP.U",
@@ -429,7 +429,7 @@
     "observacoes": "Parcela: Única | Categoria: Transporte | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_39",
+    "id": "cartao_1751061347_39",
     "tipo": "cartao",
     "data": "2025-05-17",
     "descricao": "QUINTA DE PEDRAS ADMIN",
@@ -440,7 +440,7 @@
     "observacoes": "Parcela: Única | Categoria: T&E | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_40",
+    "id": "cartao_1751061347_40",
     "tipo": "cartao",
     "data": "2025-05-17",
     "descricao": "POINT DO ACAI",
@@ -451,7 +451,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_41",
+    "id": "cartao_1751061347_41",
     "tipo": "cartao",
     "data": "2025-05-17",
     "descricao": "AMAZON BEER",
@@ -462,7 +462,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_42",
+    "id": "cartao_1751061347_42",
     "tipo": "cartao",
     "data": "2025-05-17",
     "descricao": "CAIXINHA ALEXANDRE",
@@ -473,7 +473,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_43",
+    "id": "cartao_1751061347_43",
     "tipo": "cartao",
     "data": "2025-05-17",
     "descricao": "PA BELEM CONT SUPER M",
@@ -484,7 +484,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_44",
+    "id": "cartao_1751061347_44",
     "tipo": "cartao",
     "data": "2025-05-18",
     "descricao": "UBER* TRIP",
@@ -495,7 +495,7 @@
     "observacoes": "Parcela: Única | Categoria: Transporte | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_45",
+    "id": "cartao_1751061347_45",
     "tipo": "cartao",
     "data": "2025-05-18",
     "descricao": "LIRIO MIMOSO",
@@ -506,7 +506,7 @@
     "observacoes": "Parcela: Única | Categoria: Associação | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_46",
+    "id": "cartao_1751061347_46",
     "tipo": "cartao",
     "data": "2025-05-18",
     "descricao": "DAHAS FOODS",
@@ -517,7 +517,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_47",
+    "id": "cartao_1751061347_47",
     "tipo": "cartao",
     "data": "2025-05-18",
     "descricao": "AS MULATAS",
@@ -528,7 +528,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_48",
+    "id": "cartao_1751061347_48",
     "tipo": "cartao",
     "data": "2025-05-19",
     "descricao": "UBER UBER *TRIP HELP.U",
@@ -539,7 +539,7 @@
     "observacoes": "Parcela: Única | Categoria: Transporte | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_49",
+    "id": "cartao_1751061347_49",
     "tipo": "cartao",
     "data": "2025-05-19",
     "descricao": "UBER* TRIP",
@@ -550,7 +550,7 @@
     "observacoes": "Parcela: Única | Categoria: Transporte | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_50",
+    "id": "cartao_1751061347_50",
     "tipo": "cartao",
     "data": "2025-05-19",
     "descricao": "BOSTON RESTAURANTE",
@@ -561,7 +561,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_51",
+    "id": "cartao_1751061347_51",
     "tipo": "cartao",
     "data": "2025-05-19",
     "descricao": "UBER* TRIP",
@@ -572,7 +572,7 @@
     "observacoes": "Parcela: Única | Categoria: Transporte | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_52",
+    "id": "cartao_1751061347_52",
     "tipo": "cartao",
     "data": "2025-05-19",
     "descricao": "QUINTA DE PEDRAS ADMIN",
@@ -583,7 +583,7 @@
     "observacoes": "Parcela: Única | Categoria: T&E | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_53",
+    "id": "cartao_1751061347_53",
     "tipo": "cartao",
     "data": "2025-05-20",
     "descricao": "FRANS CAFE",
@@ -594,7 +594,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_54",
+    "id": "cartao_1751061347_54",
     "tipo": "cartao",
     "data": "2025-05-20",
     "descricao": "DAYANEREZENDEMOLI",
@@ -605,7 +605,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_55",
+    "id": "cartao_1751061347_55",
     "tipo": "cartao",
     "data": "2025-05-22",
     "descricao": "HERMES COM",
@@ -616,7 +616,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_56",
+    "id": "cartao_1751061347_56",
     "tipo": "cartao",
     "data": "2025-05-22",
     "descricao": "CDS DOM PEDRO",
@@ -627,7 +627,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_57",
+    "id": "cartao_1751061347_57",
     "tipo": "cartao",
     "data": "2025-05-23",
     "descricao": "DAYANEREZENDEMOLI",
@@ -638,7 +638,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_58",
+    "id": "cartao_1751061347_58",
     "tipo": "cartao",
     "data": "2025-05-23",
     "descricao": "PADARIA SACRAMENTO",
@@ -649,7 +649,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_59",
+    "id": "cartao_1751061347_59",
     "tipo": "cartao",
     "data": "2025-05-23",
     "descricao": "POSTO ANDORINHAS",
@@ -660,7 +660,7 @@
     "observacoes": "Parcela: Única | Categoria: Relacionados a Automotivo | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_60",
+    "id": "cartao_1751061347_60",
     "tipo": "cartao",
     "data": "2025-05-24",
     "descricao": "FILHAS DA DIVINA PROVI",
@@ -671,7 +671,7 @@
     "observacoes": "Parcela: Única | Categoria: Educacional | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_61",
+    "id": "cartao_1751061347_61",
     "tipo": "cartao",
     "data": "2025-05-24",
     "descricao": "JANETESOARESGRAU",
@@ -682,7 +682,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_62",
+    "id": "cartao_1751061347_62",
     "tipo": "cartao",
     "data": "2025-05-24",
     "descricao": "JANETESOARESGRAU",
@@ -693,7 +693,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_63",
+    "id": "cartao_1751061347_63",
     "tipo": "cartao",
     "data": "2025-05-25",
     "descricao": "DELMARBARBIERO",
@@ -704,7 +704,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_64",
+    "id": "cartao_1751061347_64",
     "tipo": "cartao",
     "data": "2025-05-25",
     "descricao": "ROFATTO SUPERMERCADOS",
@@ -715,7 +715,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_65",
+    "id": "cartao_1751061347_65",
     "tipo": "cartao",
     "data": "2025-05-25",
     "descricao": "PANIFICADORA PAO DA P",
@@ -726,7 +726,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_66",
+    "id": "cartao_1751061347_66",
     "tipo": "cartao",
     "data": "2025-05-26",
     "descricao": "IFD*SILVEIRA  LIMA BAR",
@@ -737,7 +737,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_67",
+    "id": "cartao_1751061347_67",
     "tipo": "cartao",
     "data": "2025-05-26",
     "descricao": "IFD*BARRAZ FAST FOOD L",
@@ -748,18 +748,18 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_68",
+    "id": "cartao_1751061347_68",
     "tipo": "cartao",
     "data": "2025-05-28",
     "descricao": "Estorno Tarifa",
-    "valor": 98.0,
+    "valor": -98.0,
     "tipo_movimento": "entrada",
     "fonte": "Cartão C6",
     "hash": "2ee9c1c01b9ce040679d4dcd8fde2f9be3079d43f62d178b2c8f211f8c9b79c8",
     "observacoes": "Parcela: Única | Categoria: - | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_69",
+    "id": "cartao_1751061347_69",
     "tipo": "cartao",
     "data": "2025-05-28",
     "descricao": "Anuidade Diferenciada",
@@ -770,7 +770,7 @@
     "observacoes": "Parcela: 11/dez | Categoria: - | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_70",
+    "id": "cartao_1751061347_70",
     "tipo": "cartao",
     "data": "2025-05-29",
     "descricao": "IFD*WR BURGER CAMPINAS",
@@ -781,7 +781,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_71",
+    "id": "cartao_1751061347_71",
     "tipo": "cartao",
     "data": "2025-05-30",
     "descricao": "PADARIA SACRAMENTO",
@@ -792,7 +792,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_72",
+    "id": "cartao_1751061347_72",
     "tipo": "cartao",
     "data": "2025-05-31",
     "descricao": "AMAZONPRIMEBR",
@@ -803,7 +803,7 @@
     "observacoes": "Parcela: Única | Categoria: Marketing Direto | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_73",
+    "id": "cartao_1751061347_73",
     "tipo": "cartao",
     "data": "2025-06-01",
     "descricao": "DAYANEREZENDEMOLI",
@@ -814,7 +814,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_74",
+    "id": "cartao_1751061347_74",
     "tipo": "cartao",
     "data": "2025-06-01",
     "descricao": "45915-PAROQUIA N. SRA.",
@@ -825,7 +825,7 @@
     "observacoes": "Parcela: Única | Categoria: Associação | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_75",
+    "id": "cartao_1751061347_75",
     "tipo": "cartao",
     "data": "2025-06-02",
     "descricao": "PADARIA E ROTISSERIA",
@@ -836,7 +836,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_76",
+    "id": "cartao_1751061347_76",
     "tipo": "cartao",
     "data": "2025-06-02",
     "descricao": "BREWTECO TERRACO",
@@ -847,7 +847,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_77",
+    "id": "cartao_1751061347_77",
     "tipo": "cartao",
     "data": "2025-06-02",
     "descricao": "VALDIRFERNANDES",
@@ -858,7 +858,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_78",
+    "id": "cartao_1751061347_78",
     "tipo": "cartao",
     "data": "2025-06-02",
     "descricao": "WINDSOR FLORIDA HOTEL",
@@ -869,7 +869,7 @@
     "observacoes": "Parcela: Única | Categoria: T&E | Cartão: JEAN C SILVA | Final: 8909.0"
   },
   {
-    "id": "cartao_1751060452_79",
+    "id": "cartao_1751061347_79",
     "tipo": "cartao",
     "data": "2025-05-13",
     "descricao": "DAYANEREZENDEMOLI",
@@ -880,7 +880,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_80",
+    "id": "cartao_1751061347_80",
     "tipo": "cartao",
     "data": "2025-05-14",
     "descricao": "DAYANEREZENDEMOLI",
@@ -891,18 +891,18 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_81",
+    "id": "cartao_1751061347_81",
     "tipo": "cartao",
     "data": "2025-05-14",
     "descricao": "RAIA169",
-    "valor": 124.02,
+    "valor": -124.02,
     "tipo_movimento": "entrada",
     "fonte": "Cartão C6",
     "hash": "4998811c567aeb5fdc2adf43fad5ea2eaba660f0a4cd9ac01bfb368021fda4a6",
     "observacoes": "Parcela: Única | Categoria: Assistência médica e odontológica | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_82",
+    "id": "cartao_1751061347_82",
     "tipo": "cartao",
     "data": "2025-05-14",
     "descricao": "DAYANEREZENDEMOLI",
@@ -913,7 +913,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_83",
+    "id": "cartao_1751061347_83",
     "tipo": "cartao",
     "data": "2025-05-18",
     "descricao": "QUIOSQUE PAIDEGUA",
@@ -924,7 +924,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_84",
+    "id": "cartao_1751061347_84",
     "tipo": "cartao",
     "data": "2025-05-18",
     "descricao": "QUIOSQUE PAIDEGUA",
@@ -935,7 +935,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_85",
+    "id": "cartao_1751061347_85",
     "tipo": "cartao",
     "data": "2025-05-18",
     "descricao": "CATURAMA",
@@ -946,7 +946,7 @@
     "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_86",
+    "id": "cartao_1751061347_86",
     "tipo": "cartao",
     "data": "2025-05-19",
     "descricao": "FILHA DO COMBU",
@@ -957,7 +957,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_87",
+    "id": "cartao_1751061347_87",
     "tipo": "cartao",
     "data": "2025-05-26",
     "descricao": "BAR E RESTAURANTE OS G",
@@ -968,7 +968,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_88",
+    "id": "cartao_1751061347_88",
     "tipo": "cartao",
     "data": "2025-05-26",
     "descricao": "MALHARIA BAL BRAS",
@@ -979,7 +979,7 @@
     "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_89",
+    "id": "cartao_1751061347_89",
     "tipo": "cartao",
     "data": "2025-05-26",
     "descricao": "LIQUIDO JUMANA",
@@ -990,7 +990,7 @@
     "observacoes": "Parcela: Única | Categoria: Vestuário / Roupas | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_90",
+    "id": "cartao_1751061347_90",
     "tipo": "cartao",
     "data": "2025-05-28",
     "descricao": "VIACAO SANTA CRUZ",
@@ -1001,7 +1001,7 @@
     "observacoes": "Parcela: Única | Categoria: Transporte | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_91",
+    "id": "cartao_1751061347_91",
     "tipo": "cartao",
     "data": "2025-05-28",
     "descricao": "MINI EXTRA 5761",
@@ -1012,7 +1012,7 @@
     "observacoes": "Parcela: Única | Categoria: Supermercados / Mercearia / Padarias / Lojas de Conveniência | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_92",
+    "id": "cartao_1751061347_92",
     "tipo": "cartao",
     "data": "2025-05-29",
     "descricao": "BELLOLOOKS",
@@ -1023,7 +1023,7 @@
     "observacoes": "Parcela: Única | Categoria: Restaurante / Lanchonete / Bar | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_93",
+    "id": "cartao_1751061347_93",
     "tipo": "cartao",
     "data": "2025-05-30",
     "descricao": "DAYANEREZENDEMOLI",
@@ -1034,7 +1034,7 @@
     "observacoes": "Parcela: Única | Categoria: Empresa serviços | Cartão: TATIANA G CIRQUEIRA | Final: 2676.0"
   },
   {
-    "id": "cartao_1751060452_94",
+    "id": "cartao_1751061347_94",
     "tipo": "cartao",
     "data": "2025-05-31",
     "descricao": "PBADMINISTRADORA",
