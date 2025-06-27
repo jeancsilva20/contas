@@ -1,4 +1,3 @@
-
 import pandas as pd
 import os
 import json
@@ -18,49 +17,45 @@ class ImportadorTransacoes:
         Retorna as colunas encontradas e um validador.
         """
         colunas_obrigatorias = [
-            'Data de compra', 
-            'Nome no cartão', 
-            'Final do Cartão', 
-            'Categoria', 
+            'Data', 
             'Descrição', 
-            'Parcela', 
-            'Valor (em R$)',
-            'Valor Recebido (em R$)'
+            'Valor',
+            'Valor Recebido'
         ]
 
         try:
             # Tenta diferentes codificações
             encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
             df = None
-            
+
             for encoding in encodings:
                 try:
                     # Reset do arquivo se for um objeto de arquivo
                     if hasattr(arquivo, 'seek'):
                         arquivo.seek(0)
-                    
+
                     # Lê apenas o cabeçalho do CSV
                     df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding, nrows=0)
                     break
                 except UnicodeDecodeError:
                     continue
-            
+
             if df is None:
                 raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
-            
+
             colunas_encontradas = df.columns.tolist()
-            
+
             # Reset do arquivo se for um objeto de arquivo
             if hasattr(arquivo, 'seek'):
                 arquivo.seek(0)
-            
+
             # Verifica se todas as colunas obrigatórias estão presentes
             for coluna in colunas_obrigatorias:
                 if coluna not in colunas_encontradas:
                     return colunas_encontradas, False, colunas_obrigatorias
-            
+
             return colunas_encontradas, True, colunas_obrigatorias
-        
+
         except Exception as e:
             raise Exception(f"Erro ao verificar colunas: {str(e)}")
 
@@ -87,25 +82,25 @@ class ImportadorTransacoes:
             # Tenta diferentes codificações
             encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
             df = None
-            
+
             for encoding in encodings:
                 try:
                     # Reset do arquivo se for um objeto de arquivo
                     if hasattr(arquivo, 'seek'):
                         arquivo.seek(0)
-                    
+
                     # Lê o CSV
                     df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding)
                     break
                 except UnicodeDecodeError:
                     continue
-            
+
             if df is None:
                 raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
-            
+
             # Aplica o mapeamento de colunas
             df_mapeado = self._aplicar_mapeamento(df, mapeamento)
-            
+
             # Processa as transações com o DataFrame mapeado
             return self._extrair_transacoes_cartao(df_mapeado, fonte)
 
@@ -117,13 +112,13 @@ class ImportadorTransacoes:
         Aplica o mapeamento de colunas ao DataFrame
         """
         df_novo = pd.DataFrame()
-        
+
         for coluna_obrigatoria, coluna_csv in mapeamento.items():
             if coluna_csv == "DEIXAR_EM_BRANCO":
                 # Define valores padrão baseado no tipo da coluna
-                if coluna_obrigatoria == 'Valor (em R$)':
+                if coluna_obrigatoria == 'Valor':
                     df_novo[coluna_obrigatoria] = 0.0
-                elif coluna_obrigatoria in ['Data de compra']:
+                elif coluna_obrigatoria in ['Data']:
                     df_novo[coluna_obrigatoria] = '01/01/1900'
                 else:
                     df_novo[coluna_obrigatoria] = ''
@@ -133,13 +128,13 @@ class ImportadorTransacoes:
                     df_novo[coluna_obrigatoria] = df[coluna_csv]
                 else:
                     # Fallback para valor padrão se a coluna não existir
-                    if coluna_obrigatoria == 'Valor (em R$)':
+                    if coluna_obrigatoria == 'Valor':
                         df_novo[coluna_obrigatoria] = 0.0
-                    elif coluna_obrigatoria in ['Data de compra']:
+                    elif coluna_obrigatoria in ['Data']:
                         df_novo[coluna_obrigatoria] = '01/01/1900'
                     else:
                         df_novo[coluna_obrigatoria] = ''
-        
+
         return df_novo
 
     def _processar_csv(self, arquivo, fonte='Não informado'):
@@ -150,19 +145,19 @@ class ImportadorTransacoes:
             # Tenta diferentes codificações
             encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
             df = None
-            
+
             for encoding in encodings:
                 try:
                     # Reset do arquivo se for um objeto de arquivo
                     if hasattr(arquivo, 'seek'):
                         arquivo.seek(0)
-                    
+
                     # Lê o CSV com separador ponto e vírgula e decimal vírgula
                     df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding)
                     break
                 except UnicodeDecodeError:
                     continue
-            
+
             if df is None:
                 raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
 
@@ -180,16 +175,12 @@ class ImportadorTransacoes:
 
         # Define colunas obrigatórias
         colunas_obrigatorias = [
-            'Data de compra', 
-            'Nome no cartão', 
-            'Final do Cartão', 
-            'Categoria', 
+            'Data', 
             'Descrição', 
-            'Parcela', 
-            'Valor (em R$)',
-            'Valor Recebido (em R$)'
+            'Valor',
+            'Valor Recebido'
         ]
-        
+
         # Verifica se as colunas obrigatórias existem
         colunas_df = df.columns.tolist()
         for coluna in colunas_obrigatorias:
@@ -199,7 +190,7 @@ class ImportadorTransacoes:
         for index, row in df.iterrows():
             try:
                 # Extrai e valida data
-                data_str = str(row['Data de compra']).strip()
+                data_str = str(row['Data']).strip()
                 if not data_str or data_str.lower() in ['nan', '', 'nat']:
                     continue
 
@@ -212,23 +203,23 @@ class ImportadorTransacoes:
                     continue
 
                 # Extrai e valida valor
-                valor_str = str(row['Valor (em R$)']).strip()
-                valor_recebido_str = str(row.get('Valor Recebido (em R$)', '')).strip()
-                
+                valor_str = str(row['Valor']).strip()
+                valor_recebido_str = str(row.get('Valor Recebido', '')).strip()
+
                 valor = 0
                 valor_recebido = 0
                 tipo_movimento = 'saida'  # Padrão para cartão
-                
+
                 # Processa valor de saída
                 if valor_str and valor_str.lower() not in ['nan', '']:
                     valor_str = valor_str.replace('"', '')
                     valor = float(valor_str)
-                
+
                 # Processa valor recebido (estornos)
                 if valor_recebido_str and valor_recebido_str.lower() not in ['nan', '']:
                     valor_recebido_str = valor_recebido_str.replace('"', '')
                     valor_recebido = float(valor_recebido_str)
-                
+
                 # Determina valor final e tipo de movimento
                 if valor_recebido > 0:
                     # É um estorno/entrada
@@ -248,25 +239,25 @@ class ImportadorTransacoes:
                     continue
 
                 # Extrai informações adicionais
-                nome_cartao = str(row['Nome no cartão']).strip()
-                final_cartao = str(row['Final do Cartão']).strip()
-                categoria = str(row['Categoria']).strip()
-                parcela = str(row['Parcela']).strip()
+                #nome_cartao = str(row['Nome no cartão']).strip()
+                #final_cartao = str(row['Final do Cartão']).strip()
+                #categoria = str(row['Categoria']).strip()
+                #parcela = str(row['Parcela']).strip()
 
                 # Monta observações
                 observacoes = []
-                
-                if parcela and parcela.lower() not in ['nan', '']:
-                    observacoes.append(f"Parcela: {parcela}")
-                
-                if categoria and categoria.lower() not in ['nan', '']:
-                    observacoes.append(f"Categoria: {categoria}")
-                
-                if nome_cartao and nome_cartao.lower() not in ['nan', '']:
-                    observacoes.append(f"Cartão: {nome_cartao}")
-                
-                if final_cartao and final_cartao.lower() not in ['nan', '']:
-                    observacoes.append(f"Final: {final_cartao}")
+
+                #if parcela and parcela.lower() not in ['nan', '']:
+                #    observacoes.append(f"Parcela: {parcela}")
+
+                #if categoria and categoria.lower() not in ['nan', '']:
+                #    observacoes.append(f"Categoria: {categoria}")
+
+                #if nome_cartao and nome_cartao.lower() not in ['nan', '']:
+                #    observacoes.append(f"Cartão: {nome_cartao}")
+
+                #if final_cartao and final_cartao.lower() not in ['nan', '']:
+                #    observacoes.append(f"Final: {final_cartao}")
 
                 observacoes_str = ' | '.join(observacoes) if observacoes else ''
 
