@@ -267,8 +267,20 @@ def mapear_colunas():
         file_content = base64.b64decode(session['temp_file_content'])
         file_name = session.get('temp_file_name', 'arquivo.csv')
         
-        # Cria um arquivo temporário em memória
-        file_like = StringIO(file_content.decode('utf-8'))
+        # Tenta diferentes codificações para decodificar o arquivo
+        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+        file_like = None
+        
+        for encoding in encodings:
+            try:
+                decoded_content = file_content.decode(encoding)
+                file_like = StringIO(decoded_content)
+                break
+            except UnicodeDecodeError:
+                continue
+        
+        if file_like is None:
+            return "Erro: Não foi possível decodificar o arquivo com as codificações suportadas", 500
         
         # Importa o serviço de importação
         from services.importador import ImportadorTransacoes
@@ -321,7 +333,21 @@ def processar_mapeamento():
         
         # Recupera o arquivo da sessão
         file_content = base64.b64decode(session['temp_file_content'])
-        file_like = StringIO(file_content.decode('utf-8'))
+        
+        # Tenta diferentes codificações para decodificar o arquivo
+        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+        file_like = None
+        
+        for encoding in encodings:
+            try:
+                decoded_content = file_content.decode(encoding)
+                file_like = StringIO(decoded_content)
+                break
+            except UnicodeDecodeError:
+                continue
+        
+        if file_like is None:
+            return jsonify({'success': False, 'message': 'Não foi possível decodificar o arquivo com as codificações suportadas'})
         
         # Importa e processa com mapeamento
         from services.importador import ImportadorTransacoes
