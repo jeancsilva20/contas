@@ -12,6 +12,36 @@ class ImportadorTransacoes:
         self.novas_transacoes = 0
         self.pendentes_adicionadas = 0
 
+    def verificar_colunas(self, arquivo):
+        """
+        Verifica se as colunas obrigatórias estão presentes no CSV.
+        Retorna as colunas encontradas e um validador.
+        """
+        colunas_obrigatorias = [
+            'Data de compra', 
+            'Nome no cartão', 
+            'Final do Cartão', 
+            'Categoria', 
+            'Descrição', 
+            'Parcela', 
+            'Valor (em R$)'
+        ]
+
+        try:
+            # Lê apenas o cabeçalho do CSV
+            df = pd.read_csv(arquivo, sep=';', decimal=',', encoding='utf-8', nrows=0)
+            colunas_encontradas = df.columns.tolist()
+            
+            # Verifica se todas as colunas obrigatórias estão presentes
+            for coluna in colunas_obrigatorias:
+                if coluna not in colunas_encontradas:
+                    return colunas_encontradas, False, colunas_obrigatorias
+            
+            return colunas_encontradas, True, colunas_obrigatorias
+        
+        except Exception as e:
+            raise Exception(f"Erro ao verificar colunas: {str(e)}")
+
     def processar_arquivo(self, arquivo):
         """
         Processa arquivo CSV e extrai transações
@@ -26,6 +56,53 @@ class ImportadorTransacoes:
 
         except Exception as e:
             raise Exception(f"Erro ao processar arquivo: {str(e)}")
+
+    def processar_arquivo_com_mapeamento(self, arquivo, mapeamento):
+        """
+        Processa arquivo CSV com mapeamento de colunas personalizado
+        """
+        try:
+            # Lê o CSV
+            df = pd.read_csv(arquivo, sep=';', decimal=',', encoding='utf-8')
+            
+            # Aplica o mapeamento de colunas
+            df_mapeado = self._aplicar_mapeamento(df, mapeamento)
+            
+            # Processa as transações com o DataFrame mapeado
+            return self._extrair_transacoes_cartao(df_mapeado)
+
+        except Exception as e:
+            raise Exception(f"Erro ao processar arquivo com mapeamento: {str(e)}")
+
+    def _aplicar_mapeamento(self, df, mapeamento):
+        """
+        Aplica o mapeamento de colunas ao DataFrame
+        """
+        df_novo = pd.DataFrame()
+        
+        for coluna_obrigatoria, coluna_csv in mapeamento.items():
+            if coluna_csv == "DEIXAR_EM_BRANCO":
+                # Define valores padrão baseado no tipo da coluna
+                if coluna_obrigatoria == 'Valor (em R$)':
+                    df_novo[coluna_obrigatoria] = 0.0
+                elif coluna_obrigatoria in ['Data de compra']:
+                    df_novo[coluna_obrigatoria] = '01/01/1900'
+                else:
+                    df_novo[coluna_obrigatoria] = ''
+            else:
+                # Usa a coluna mapeada do CSV original
+                if coluna_csv in df.columns:
+                    df_novo[coluna_obrigatoria] = df[coluna_csv]
+                else:
+                    # Fallback para valor padrão se a coluna não existir
+                    if coluna_obrigatoria == 'Valor (em R$)':
+                        df_novo[coluna_obrigatoria] = 0.0
+                    elif coluna_obrigatoria in ['Data de compra']:
+                        df_novo[coluna_obrigatoria] = '01/01/1900'
+                    else:
+                        df_novo[coluna_obrigatoria] = ''
+        
+        return df_novo
 
     def _processar_csv(self, arquivo):
         """

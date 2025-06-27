@@ -50,11 +50,34 @@ def process_upload():
         # Importa o serviço de importação
         from services.importador import ImportadorTransacoes
         
-        # Processa o arquivo
+        # Verifica as colunas do arquivo
         importador = ImportadorTransacoes()
-        transacoes = importador.processar_arquivo(file)
         
-        # Salva as transações
+        # Salva o arquivo temporariamente na sessão para uso posterior
+        import tempfile
+        import base64
+        
+        file_content = file.read()
+        file.seek(0)  # Reset para poder ler novamente
+        
+        # Codifica o conteúdo do arquivo para a sessão
+        from flask import session
+        session['temp_file_content'] = base64.b64encode(file_content).decode('utf-8')
+        session['temp_file_name'] = file.filename
+        
+        colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(file)
+        
+        if not colunas_validas:
+            # Redireciona para a tela de mapeamento
+            return jsonify({
+                'success': False, 
+                'requires_mapping': True,
+                'message': 'Arquivo requer mapeamento de colunas',
+                'redirect_url': '/mapear_colunas'
+            })
+        
+        # Se as colunas estão corretas, processa normalmente
+        transacoes = importador.processar_arquivo(file)
         importador.salvar_transacoes(transacoes)
         
         # Prepara mensagem de sucesso
@@ -225,6 +248,104 @@ def rateio():
         
     except Exception as e:
         return f"Erro ao carregar rateio: {str(e)}", 500
+
+@app.route('/mapear_colunas')
+def mapear_colunas():
+    """
+    Exibe tela de mapeamento de colunas
+    """
+    try:
+        from flask import session
+        import tempfile
+        import base64
+        from io import StringIO
+        
+        if 'temp_file_content' not in session:
+            return redirect('/')
+        
+        # Recupera o arquivo da sessão
+        file_content = base64.b64decode(session['temp_file_content'])
+        file_name = session.get('temp_file_name', 'arquivo.csv')
+        
+        # Cria um arquivo temporário em memória
+        file_like = StringIO(file_content.decode('utf-8'))
+        
+        # Importa o serviço de importação
+        from services.importador import ImportadorTransacoes
+        importador = ImportadorTransacoes()
+        
+        colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(file_like)
+        
+        return render_template('mapear_colunas.html', 
+                             colunas_encontradas=colunas_encontradas,
+                             colunas_obrigatorias=colunas_obrigatorias,
+                             file_name=file_name)
+        
+    except Exception as e:
+        return f"Erro ao carregar mapeamento: {str(e)}", 500
+
+@app.route('/processar_mapeamento', methods=['POST'])
+def processar_mapeamento():
+    """
+    Processa o arquivo CSV com mapeamento de colunas
+    """
+    try:
+        from flask import session
+        import base64
+        from io import StringIO
+        
+        if 'temp_file_content' not in session:
+            return jsonify({'success': False, 'message': 'Arquivo não encontrado na sessão'})
+        
+        # Recupera dados do formulário
+        mapeamento = {}
+        for key, value in request.form.items():
+            if key.startswith('coluna_'):
+                coluna_obrigatoria = key.replace('coluna_', '')
+                mapeamento[coluna_obrigatoria] = value if value else "DEIXAR_EM_BRANCO"
+        
+        # Valida se todas as colunas obrigatórias foram mapeadas
+        colunas_obrigatorias = [
+            'Data de compra', 
+            'Nome no cartão', 
+            'Final do Cartão', 
+            'Categoria', 
+            'Descrição', 
+            'Parcela', 
+            'Valor (em R$)'
+        ]
+        
+        for coluna in colunas_obrigatorias:
+            if coluna not in mapeamento:
+                return jsonify({'success': False, 'message': f'Coluna obrigatória "{coluna}" não foi mapeada'})
+        
+        # Recupera o arquivo da sessão
+        file_content = base64.b64decode(session['temp_file_content'])
+        file_like = StringIO(file_content.decode('utf-8'))
+        
+        # Importa e processa com mapeamento
+        from services.importador import ImportadorTransacoes
+        importador = ImportadorTransacoes()
+        
+        transacoes = importador.processar_arquivo_com_mapeamento(file_like, mapeamento)
+        importador.salvar_transacoes(transacoes)
+        
+        # Limpa a sessão
+        session.pop('temp_file_content', None)
+        session.pop('temp_file_name', None)
+        
+        # Prepara mensagem de sucesso
+        if importador.novas_transacoes > 0:
+            message = f'Importação concluída! {importador.novas_transacoes} novas transações adicionadas.'
+            if importador.pendentes_adicionadas > 0:
+                message += f' {importador.pendentes_adicionadas} transações enviadas para revisão.'
+        else:
+            message = 'Arquivo processado, mas nenhuma transação nova foi encontrada.'
+        
+        return jsonify({'success': True, 'message': message})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro ao processar mapeamento: {str(e)}'})
 
 @app.route('/salvar_revisao', methods=['POST'])
 def salvar_revisao():

@@ -181,6 +181,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <br>
                     <small class="text-muted">Arquivos suportados: .csv</small>
                 `;
+            } else if (data.requires_mapping) {
+                // Redireciona para mapeamento de colunas
+                Notiflix.Notify.info('Redirecionando para mapeamento de colunas...');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1000);
             } else {
                 Notiflix.Notify.failure(data.message);
             }

@@ -1,0 +1,221 @@
+
+{% extends "base.html" %}
+
+{% block title %}Mapeamento de Colunas - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-left-right me-2"></i>
+                    Mapeamento de Colunas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Arquivo:</strong> {{ file_name }}
+                    <br>
+                    O arquivo não possui todas as colunas obrigatórias no formato esperado. 
+                    Por favor, mapeie cada coluna obrigatória para a coluna correspondente do seu arquivo, 
+                    ou deixe em branco para usar valores padrão.
+                </div>
+
+                <form id="mapeamentoForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Colunas Obrigatórias</h6>
+                            
+                            {% for coluna_obrigatoria in colunas_obrigatorias %}
+                            <div class="mb-3">
+                                <label for="coluna_{{ coluna_obrigatoria|replace(' ', '_')|replace('(', '')|replace(')', '')|replace('$', '') }}" class="form-label">
+                                    <strong>{{ coluna_obrigatoria }}</strong>
+                                </label>
+                                <select class="form-select" 
+                                        name="coluna_{{ coluna_obrigatoria }}" 
+                                        id="coluna_{{ coluna_obrigatoria|replace(' ', '_')|replace('(', '')|replace(')', '')|replace('$', '') }}"
+                                        required>
+                                    <option value="">Selecione uma coluna...</option>
+                                    <option value="DEIXAR_EM_BRANCO" class="text-muted">
+                                        🚫 Deixar em branco (valor padrão)
+                                    </option>
+                                    {% for coluna_csv in colunas_encontradas %}
+                                    <option value="{{ coluna_csv }}">{{ coluna_csv }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3">Colunas Encontradas no Arquivo</h6>
+                            <div class="border rounded p-3 bg-light">
+                                {% for coluna in colunas_encontradas %}
+                                <div class="badge bg-secondary me-2 mb-2">{{ coluna }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h6 class="text-warning mb-3">Valores Padrão</h6>
+                                <div class="small text-muted">
+                                    <ul class="list-unstyled">
+                                        <li><strong>Data de compra:</strong> 01/01/1900</li>
+                                        <li><strong>Nome no cartão:</strong> (vazio)</li>
+                                        <li><strong>Final do Cartão:</strong> (vazio)</li>
+                                        <li><strong>Categoria:</strong> (vazio)</li>
+                                        <li><strong>Descrição:</strong> (vazio)</li>
+                                        <li><strong>Parcela:</strong> (vazio)</li>
+                                        <li><strong>Valor (em R$):</strong> 0.00</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary" id="confirmarBtn">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Confirmar Mapeamento e Importar
+                        </button>
+                        <a href="/" class="btn btn-secondary">
+                            <i class="bi bi-x-circle me-2"></i>
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('mapeamentoForm');
+    const confirmarBtn = document.getElementById('confirmarBtn');
+    
+    // Validação em tempo real
+    function validarFormulario() {
+        const selects = form.querySelectorAll('select[required]');
+        let todosPreenchidos = true;
+        
+        selects.forEach(select => {
+            if (!select.value) {
+                todosPreenchidos = false;
+            }
+        });
+        
+        confirmarBtn.disabled = !todosPreenchidos;
+        
+        if (todosPreenchidos) {
+            confirmarBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Confirmar Mapeamento e Importar';
+            confirmarBtn.classList.remove('btn-secondary');
+            confirmarBtn.classList.add('btn-primary');
+        } else {
+            confirmarBtn.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Selecione todas as colunas';
+            confirmarBtn.classList.remove('btn-primary');
+            confirmarBtn.classList.add('btn-secondary');
+        }
+    }
+    
+    // Adiciona evento de mudança para todos os selects
+    form.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', validarFormulario);
+    });
+    
+    // Validação inicial
+    validarFormulario();
+    
+    // Submissão do formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Desabilita o botão e mostra loading
+        confirmarBtn.disabled = true;
+        confirmarBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+        
+        Notiflix.Loading.circle('Processando arquivo com mapeamento...');
+        
+        // Envia dados do mapeamento
+        const formData = new FormData(form);
+        
+        fetch('/processar_mapeamento', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            Notiflix.Loading.remove();
+            
+            if (data.success) {
+                Notiflix.Notify.success(data.message);
+                // Redireciona para a página principal após sucesso
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                Notiflix.Notify.failure(data.message);
+                // Reabilita o botão
+                validarFormulario();
+            }
+        })
+        .catch(error => {
+            Notiflix.Loading.remove();
+            Notiflix.Notify.failure('Erro ao processar mapeamento: ' + error.message);
+            // Reabilita o botão
+            validarFormulario();
+        });
+    });
+    
+    // Auto-mapeamento inteligente baseado em similaridade de nomes
+    function autoMapear() {
+        const selects = form.querySelectorAll('select[name^="coluna_"]');
+        
+        selects.forEach(select => {
+            const nomeColuna = select.name.replace('coluna_', '');
+            const options = select.querySelectorAll('option[value]:not([value=""]):not([value="DEIXAR_EM_BRANCO"])');
+            
+            // Tenta encontrar correspondência exata ou similar
+            options.forEach(option => {
+                const valorOption = option.value.toLowerCase();
+                const nomeColunaNorm = nomeColuna.toLowerCase();
+                
+                // Correspondência exata
+                if (valorOption === nomeColunaNorm) {
+                    select.value = option.value;
+                    return;
+                }
+                
+                // Correspondência parcial por palavras-chave
+                const palavrasChave = {
+                    'data de compra': ['data', 'compra', 'transacao', 'movimentacao'],
+                    'nome no cartão': ['nome', 'cartao', 'titular'],
+                    'final do cartão': ['final', 'cartao', 'numero'],
+                    'categoria': ['categoria', 'tipo', 'class'],
+                    'descrição': ['descricao', 'historico', 'detalhe'],
+                    'parcela': ['parcela', 'installment'],
+                    'valor (em r$)': ['valor', 'preco', 'amount', 'r$', 'real']
+                };
+                
+                const palavras = palavrasChave[nomeColunaNorm] || [];
+                for (const palavra of palavras) {
+                    if (valorOption.includes(palavra)) {
+                        select.value = option.value;
+                        return;
+                    }
+                }
+            });
+        });
+        
+        // Revalida após auto-mapeamento
+        validarFormulario();
+    }
+    
+    // Executa auto-mapeamento ao carregar a página
+    autoMapear();
+});
+</script>
+{% endblock %}
