@@ -1331,17 +1331,6 @@
     "observacoes": "Cartão: BOTICARIO PRODUTOS DE BELEZA LTDA"
   },
   {
-    "id": "cartao_1751061990_29",
-    "tipo": "cartao",
-    "data": "2025-06-03",
-    "descricao": "TRANSF ENVIADA PIX",
-    "valor": 192.84,
-    "tipo_movimento": "saida",
-    "fonte": "Conta C6",
-    "hash": "73cac6a1102f23ca1ef618c28c5a593d68f4dc1225aa7711452ec74b1c2df3f1",
-    "observacoes": "Cartão: Pix enviado para NATURA ECO PAY SERVICOS FINANCEIROS E TECNOLOGIA EM PAGAMENTOS ELETRONICOS LTDA"
-  },
-  {
     "id": "cartao_1751061990_30",
     "tipo": "cartao",
     "data": "2025-06-06",
