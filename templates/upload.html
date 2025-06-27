@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Upload de Arquivos - {{ super() }}{% endblock %}
@@ -18,7 +17,7 @@
                 required>
             </md-filled-text-field>
         </div>
-        
+
         <div class="form-group">
             <label for="file">Selecionar arquivo (.xlsx/.csv):</label>
             <div class="file-input-wrapper">
@@ -36,7 +35,7 @@
                 <div class="file-name" id="fileName"></div>
             </div>
         </div>
-        
+
         <md-filled-button id="submitBtn" type="submit">
             Importar
         </md-filled-button>
@@ -51,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileName = document.getElementById('fileName');
     const uploadForm = document.getElementById('uploadForm');
     const submitBtn = document.getElementById('submitBtn');
-    
+
     // Atualizar nome do arquivo selecionado
     fileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
@@ -60,29 +59,29 @@ document.addEventListener('DOMContentLoaded', function() {
             fileName.textContent = '';
         }
     });
-    
+
     // Processar envio do formulário
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const formData = new FormData(uploadForm);
         const password = document.getElementById('password').value;
         const file = fileInput.files[0];
-        
+
         // Validações básicas
         if (!password) {
             Notiflix.Notify.failure('Por favor, digite a senha do arquivo');
             return;
         }
-        
+
         if (!file) {
             Notiflix.Notify.failure('Por favor, selecione um arquivo');
             return;
         }
-        
+
         // Mostrar loading
         Notiflix.Loading.circle('Processando arquivo...');
-        
+
         // Simular processamento
         fetch('/process_upload', {
             method: 'POST',
@@ -91,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             Notiflix.Loading.remove();
-            
+
             if (data.success) {
                 Notiflix.Notify.success(data.message);
                 // Limpar formulário

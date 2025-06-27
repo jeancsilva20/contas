@@ -1,27 +1,26 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Gestão de Contas Pessoais{% endblock %}</title>
-    
+
     <!-- Material Web Components -->
     <script type="module" src="https://unpkg.com/@material/web/all.js"></script>
-    
+
     <!-- Notiflix CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-3.2.6.min.css" />
-    
+
     <!-- Notiflix JS -->
     <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-aio-3.2.6.min.js"></script>
-    
+
     <style>
         :root {
             --md-sys-color-primary: rgb(103, 80, 164);
             --md-sys-color-surface: rgb(255, 251, 254);
             --md-sys-color-on-surface: rgb(28, 27, 31);
         }
-        
+
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
@@ -29,25 +28,25 @@
             background-color: var(--md-sys-color-surface);
             color: var(--md-sys-color-on-surface);
         }
-        
+
         .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 24px;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 32px;
         }
-        
+
         .header h1 {
             font-size: 2rem;
             font-weight: 400;
             color: var(--md-sys-color-primary);
             margin: 0;
         }
-        
+
         .card {
             background: white;
             border-radius: 12px;
@@ -55,29 +54,29 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
             margin-bottom: 16px;
         }
-        
+
         .form-group {
             margin-bottom: 24px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
         }
-        
+
         .file-input-wrapper {
             position: relative;
             display: inline-block;
             width: 100%;
         }
-        
+
         .file-input {
             position: absolute;
             left: -9999px;
             opacity: 0;
         }
-        
+
         .file-input-label {
             display: inline-block;
             padding: 12px 24px;
@@ -90,28 +89,46 @@
             width: 100%;
             box-sizing: border-box;
         }
-        
+
         .file-input-label:hover {
             background: rgba(103, 80, 164, 0.8);
         }
-        
+
         .file-name {
             margin-top: 8px;
             font-size: 0.9rem;
             color: #666;
         }
-        
+
         md-filled-text-field {
             width: 100%;
             margin-bottom: 16px;
         }
-        
+
         md-filled-button {
             width: 100%;
             margin-top: 16px;
         }
     </style>
-    
+
+    <script type="importmap">
+        {
+            "imports": {
+                "@material/web/": "https://esm.run/@material/web/"
+            }
+        }
+    </script>
+    <script type="module">
+        import '@material/web/all.js';
+        import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+
+        document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+
+    <!-- Notiflix -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-3.2.6.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-aio-3.2.6.min.js"></script>
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -119,12 +136,12 @@
         <header class="header">
             <h1>{% block header %}Sistema de Gestão de Contas Pessoais{% endblock %}</h1>
         </header>
-        
+
         <main>
             {% block content %}{% endblock %}
         </main>
     </div>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

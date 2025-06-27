@@ -64,9 +64,13 @@ class ImportadorTransacoes:
             return self._extrair_transacoes(df, tipo_arquivo)
             
         except Exception as e:
-            if "Invalid password" in str(e) or "Bad password" in str(e):
-                raise ValueError("Senha incorreta")
-            raise Exception(f"Erro ao processar Excel: {str(e)}")
+            error_msg = str(e).lower()
+            if any(keyword in error_msg for keyword in ["invalid password", "bad password", "incorrect password", "wrong password"]):
+                raise ValueError("Senha incorreta para o arquivo")
+            elif "password" in error_msg:
+                raise ValueError("Erro de senha ou arquivo corrompido")
+            else:
+                raise Exception(f"Erro ao processar Excel: {str(e)}")
     
     def _processar_csv(self, arquivo):
         """
@@ -87,18 +91,28 @@ class ImportadorTransacoes:
     
     def _identificar_tipo_arquivo(self, df):
         """
-        Identifica se é fatura de cartão ou extrato bancário
+        Identifica se é fatura de cartão ou extrato bancário baseado nas colunas
         """
-        colunas = [col.lower() for col in df.columns]
+        colunas = [col.lower().strip() for col in df.columns]
         
-        # Palavras-chave para identificação
-        cartao_keywords = ['fatura', 'cartao', 'card', 'limite']
-        conta_keywords = ['extrato', 'saldo', 'conta', 'banco']
+        # Colunas características de fatura de cartão
+        cartao_keywords = [
+            'data de compra', 'nome no cartao', 'final do cartao', 
+            'categoria', 'parcela', 'valor (em us$)', 'cotacao', 'valor (em r$)'
+        ]
         
-        cartao_score = sum(1 for keyword in cartao_keywords if any(keyword in col for col in colunas))
-        conta_score = sum(1 for keyword in conta_keywords if any(keyword in col for col in colunas))
+        # Colunas características de extrato bancário
+        conta_keywords = [
+            'data lancamento', 'data contabil', 'titulo', 
+            'entrada(r$)', 'saida(r$)', 'saldo do dia'
+        ]
         
-        return 'cartao' if cartao_score >= conta_score else 'conta'
+        cartao_score = sum(1 for keyword in cartao_keywords 
+                          if any(keyword in col for col in colunas))
+        conta_score = sum(1 for keyword in conta_keywords 
+                         if any(keyword in col for col in colunas))
+        
+        return 'cartao' if cartao_score > conta_score else 'conta'
     
     def _extrair_transacoes(self, df, tipo_arquivo):
         """
@@ -106,17 +120,21 @@ class ImportadorTransacoes:
         """
         transacoes = []
         
-        # Mapeia colunas possíveis para nossos campos padrão
-        mapeamento_data = ['data', 'date', 'data_transacao', 'data_compra']
-        mapeamento_descricao = ['descricao', 'description', 'estabelecimento', 'historico', 'memo']
-        mapeamento_valor = ['valor', 'value', 'amount', 'quantia']
+        if tipo_arquivo == 'cartao':
+            # Mapeamento para fatura de cartão
+            col_data = self._encontrar_coluna(df, ['data de compra', 'data_compra', 'data'])
+            col_descricao = self._encontrar_coluna(df, ['descricao', 'description'])
+            col_valor = self._encontrar_coluna(df, ['valor (em r$)', 'valor_rs', 'valor'])
+            col_parcela = self._encontrar_coluna(df, ['parcela'])
+        else:
+            # Mapeamento para extrato bancário
+            col_data = self._encontrar_coluna(df, ['data lancamento', 'data_lancamento', 'data'])
+            col_descricao = self._encontrar_coluna(df, ['descricao', 'description'])
+            col_titulo = self._encontrar_coluna(df, ['titulo'])
+            col_entrada = self._encontrar_coluna(df, ['entrada(r$)', 'entrada'])
+            col_saida = self._encontrar_coluna(df, ['saida(r$)', 'saida'])
         
-        # Encontra as colunas correspondentes
-        col_data = self._encontrar_coluna(df, mapeamento_data)
-        col_descricao = self._encontrar_coluna(df, mapeamento_descricao)
-        col_valor = self._encontrar_coluna(df, mapeamento_valor)
-        
-        if not all([col_data, col_descricao, col_valor]):
+        if not col_data or not col_descricao:
             raise ValueError("Não foi possível identificar as colunas necessárias no arquivo")
         
         for _, row in df.iterrows():
@@ -124,15 +142,41 @@ class ImportadorTransacoes:
                 # Extrai dados da linha
                 data = pd.to_datetime(row[col_data])
                 descricao = str(row[col_descricao]).strip()
-                valor = float(row[col_valor])
                 
                 # Pula linhas vazias ou inválidas
                 if pd.isna(data) or not descricao or descricao.lower() in ['nan', '']:
                     continue
                 
-                # Determina tipo de movimento
-                tipo_movimento = 'saida' if valor < 0 else 'entrada'
-                valor_abs = abs(valor)
+                if tipo_arquivo == 'cartao':
+                    if not col_valor:
+                        continue
+                    valor = float(row[col_valor])
+                    tipo_movimento = 'saida'  # Fatura de cartão sempre é saída
+                    valor_abs = abs(valor)
+                    
+                    # Adiciona informação de parcela se disponível
+                    observacoes = ''
+                    if col_parcela and not pd.isna(row[col_parcela]):
+                        observacoes = f"Parcela: {row[col_parcela]}"
+                        
+                else:  # extrato bancário
+                    # Determina valor e tipo de movimento
+                    entrada = 0 if pd.isna(row[col_entrada]) else float(row[col_entrada])
+                    saida = 0 if pd.isna(row[col_saida]) else float(row[col_saida])
+                    
+                    if entrada > 0:
+                        valor_abs = entrada
+                        tipo_movimento = 'entrada'
+                    elif saida > 0:
+                        valor_abs = saida
+                        tipo_movimento = 'saida'
+                    else:
+                        continue  # Pula se não há valor
+                    
+                    # Adiciona título como observação se disponível
+                    observacoes = ''
+                    if col_titulo and not pd.isna(row[col_titulo]):
+                        observacoes = f"Título: {row[col_titulo]}"
                 
                 # Determina fonte baseada no tipo
                 fonte = self._determinar_fonte(tipo_arquivo)
@@ -154,7 +198,7 @@ class ImportadorTransacoes:
                     'tipo_movimento': tipo_movimento,
                     'fonte': fonte,
                     'hash': hash_transacao,
-                    'observacoes': ''
+                    'observacoes': observacoes
                 }
                 
                 transacoes.append(transacao)
@@ -169,13 +213,19 @@ class ImportadorTransacoes:
         """
         Encontra a coluna correspondente baseada em nomes possíveis
         """
-        colunas_df = [col.lower() for col in df.columns]
+        colunas_df = [col.lower().strip() for col in df.columns]
         
         for nome in possiveis_nomes:
-            for col in colunas_df:
-                if nome in col:
-                    # Retorna o nome original da coluna
-                    return df.columns[colunas_df.index(col)]
+            nome_lower = nome.lower().strip()
+            # Busca correspondência exata primeiro
+            for i, col in enumerate(colunas_df):
+                if nome_lower == col:
+                    return df.columns[i]
+            
+            # Busca correspondência parcial
+            for i, col in enumerate(colunas_df):
+                if nome_lower in col or col in nome_lower:
+                    return df.columns[i]
         return None
     
     def _determinar_fonte(self, tipo_arquivo):
