@@ -1,4 +1,25 @@
 
+import os
+import atexit
+import glob
+
+def cleanup_temp_files():
+    """Limpa arquivos temporários antigos na inicialização e encerramento"""
+    try:
+        temp_dir = 'temp'
+        if os.path.exists(temp_dir):
+            for temp_file in glob.glob(os.path.join(temp_dir, '*.csv')):
+                try:
+                    os.remove(temp_file)
+                except:
+                    pass
+    except:
+        pass
+
+# Registra função de limpeza para ser executada ao encerrar a aplicação
+atexit.register(cleanup_temp_files)
+
+
 from flask import Flask, render_template, request, jsonify, session, redirect
 import os
 
@@ -84,16 +105,25 @@ def process_upload():
         # Verifica as colunas do arquivo
         importador = ImportadorTransacoes()
         
-        # Salva o arquivo temporariamente na sessão para uso posterior
+        # Salva o arquivo temporariamente no sistema de arquivos
         import tempfile
-        import base64
+        import uuid
         
         file_content = file.read()
         file.seek(0)  # Reset para poder ler novamente
         
-        # Codifica o conteúdo do arquivo para a sessão
-        from flask import session
-        session['temp_file_content'] = base64.b64encode(file_content).decode('utf-8')
+        # Gera um ID único para o arquivo temporário
+        temp_id = str(uuid.uuid4())
+        temp_dir = 'temp'
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_file_path = os.path.join(temp_dir, f"{temp_id}.csv")
+        
+        # Salva o arquivo temporariamente
+        with open(temp_file_path, 'wb') as temp_file:
+            temp_file.write(file_content)
+        
+        # Armazena apenas metadados na sessão
+        session['temp_file_id'] = temp_id
         session['temp_file_name'] = file.filename
         session['temp_fonte'] = fonte
         
@@ -331,37 +361,23 @@ def mapear_colunas():
     Exibe tela de mapeamento de colunas
     """
     try:
-        import tempfile
-        import base64
-        from io import StringIO
-        
-        if 'temp_file_content' not in session:
+        if 'temp_file_id' not in session:
             return redirect('/')
         
-        # Recupera o arquivo da sessão
-        file_content = base64.b64decode(session['temp_file_content'])
+        # Recupera o arquivo temporário
+        temp_id = session.get('temp_file_id')
         file_name = session.get('temp_file_name', 'arquivo.csv')
+        temp_file_path = os.path.join('temp', f"{temp_id}.csv")
         
-        # Tenta diferentes codificações para decodificar o arquivo
-        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
-        file_like = None
-        
-        for encoding in encodings:
-            try:
-                decoded_content = file_content.decode(encoding)
-                file_like = StringIO(decoded_content)
-                break
-            except UnicodeDecodeError:
-                continue
-        
-        if file_like is None:
-            return "Erro: Não foi possível decodificar o arquivo com as codificações suportadas", 500
+        if not os.path.exists(temp_file_path):
+            return "Erro: Arquivo temporário não encontrado", 500
         
         # Importa o serviço de importação
         from services.importador import ImportadorTransacoes
         importador = ImportadorTransacoes()
         
-        colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(file_like)
+        with open(temp_file_path, 'rb') as temp_file:
+            colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(temp_file)
         
         return render_template('mapear_colunas.html', 
                              colunas_encontradas=colunas_encontradas,
@@ -377,11 +393,7 @@ def processar_mapeamento():
     Processa o arquivo CSV com mapeamento de colunas
     """
     try:
-        from flask import session
-        import base64
-        from io import StringIO
-        
-        if 'temp_file_content' not in session:
+        if 'temp_file_id' not in session:
             return jsonify({'success': False, 'message': 'Arquivo não encontrado na sessão'})
         
         # Recupera dados do formulário
@@ -407,34 +419,30 @@ def processar_mapeamento():
             if coluna not in mapeamento:
                 return jsonify({'success': False, 'message': f'Coluna obrigatória "{coluna}" não foi mapeada'})
         
-        # Recupera o arquivo da sessão
-        file_content = base64.b64decode(session['temp_file_content'])
+        # Recupera o arquivo temporário
+        temp_id = session.get('temp_file_id')
+        temp_file_path = os.path.join('temp', f"{temp_id}.csv")
         
-        # Tenta diferentes codificações para decodificar o arquivo
-        encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
-        file_like = None
-        
-        for encoding in encodings:
-            try:
-                decoded_content = file_content.decode(encoding)
-                file_like = StringIO(decoded_content)
-                break
-            except UnicodeDecodeError:
-                continue
-        
-        if file_like is None:
-            return jsonify({'success': False, 'message': 'Não foi possível decodificar o arquivo com as codificações suportadas'})
+        if not os.path.exists(temp_file_path):
+            return jsonify({'success': False, 'message': 'Arquivo temporário não encontrado'})
         
         # Importa e processa com mapeamento
         from services.importador import ImportadorTransacoes
         importador = ImportadorTransacoes()
         
         fonte = session.get('temp_fonte', 'Não informado')
-        transacoes = importador.processar_arquivo_com_mapeamento(file_like, mapeamento, fonte)
-        importador.salvar_transacoes(transacoes)
         
-        # Limpa a sessão
-        session.pop('temp_file_content', None)
+        with open(temp_file_path, 'rb') as temp_file:
+            transacoes = importador.processar_arquivo_com_mapeamento(temp_file, mapeamento, fonte)
+            importador.salvar_transacoes(transacoes)
+        
+        # Limpa arquivos temporários e sessão
+        try:
+            os.remove(temp_file_path)
+        except:
+            pass  # Ignora erro se arquivo já foi removido
+        
+        session.pop('temp_file_id', None)
         session.pop('temp_file_name', None)
         session.pop('temp_fonte', None)
         
@@ -659,4 +667,6 @@ def exportar_rateio_csv():
         return f"Erro ao exportar CSV: {str(e)}", 500
 
 if __name__ == '__main__':
+    # Limpa arquivos temporários antigos na inicialização
+    cleanup_temp_files()
     app.run(host='0.0.0.0', port=5000, debug=True)
