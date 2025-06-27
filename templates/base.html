@@ -279,22 +279,6 @@
             color: #c62828;
         }
     </style>
-        {
-            "imports": {
-                "@material/web/": "https://esm.run/@material/web/"
-            }
-        }
-    </script>
-    <script type="module">
-        import '@material/web/all.js';
-        import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
-
-        document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
-    </script>
-
-    <!-- Notiflix -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-3.2.6.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-aio-3.2.6.min.js"></script>
 
     {% block extra_css %}{% endblock %}
 </head>
