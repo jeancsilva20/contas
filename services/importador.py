@@ -63,7 +63,7 @@ class ImportadorTransacoes:
         except Exception as e:
             raise Exception(f"Erro ao verificar colunas: {str(e)}")
 
-    def processar_arquivo(self, arquivo):
+    def processar_arquivo(self, arquivo, fonte='Não informado'):
         """
         Processa arquivo CSV e extrai transações
         """
@@ -73,12 +73,12 @@ class ImportadorTransacoes:
             if not nome_arquivo.endswith('.csv'):
                 raise ValueError("Apenas arquivos CSV são suportados")
 
-            return self._processar_csv(arquivo)
+            return self._processar_csv(arquivo, fonte)
 
         except Exception as e:
             raise Exception(f"Erro ao processar arquivo: {str(e)}")
 
-    def processar_arquivo_com_mapeamento(self, arquivo, mapeamento):
+    def processar_arquivo_com_mapeamento(self, arquivo, mapeamento, fonte='Não informado'):
         """
         Processa arquivo CSV com mapeamento de colunas personalizado
         """
@@ -106,7 +106,7 @@ class ImportadorTransacoes:
             df_mapeado = self._aplicar_mapeamento(df, mapeamento)
             
             # Processa as transações com o DataFrame mapeado
-            return self._extrair_transacoes_cartao(df_mapeado)
+            return self._extrair_transacoes_cartao(df_mapeado, fonte)
 
         except Exception as e:
             raise Exception(f"Erro ao processar arquivo com mapeamento: {str(e)}")
@@ -141,7 +141,7 @@ class ImportadorTransacoes:
         
         return df_novo
 
-    def _processar_csv(self, arquivo):
+    def _processar_csv(self, arquivo, fonte='Não informado'):
         """
         Processa arquivo CSV do cartão de crédito com novo padrão
         """
@@ -166,12 +166,12 @@ class ImportadorTransacoes:
                 raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
 
             # Processa as transações
-            return self._extrair_transacoes_cartao(df)
+            return self._extrair_transacoes_cartao(df, fonte)
 
         except Exception as e:
             raise Exception(f"Erro ao processar CSV: {str(e)}")
 
-    def _extrair_transacoes_cartao(self, df):
+    def _extrair_transacoes_cartao(self, df, fonte='Não informado'):
         """
         Extrai transações do CSV do cartão de crédito - novo padrão
         """
@@ -263,7 +263,7 @@ class ImportadorTransacoes:
                     'descricao': descricao,
                     'valor': valor_abs,
                     'tipo_movimento': 'saida',  # Cartão sempre é saída
-                    'fonte': 'Cartão de Crédito',
+                    'fonte': fonte,
                     'hash': hash_transacao,
                     'observacoes': observacoes_str
                 }

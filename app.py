@@ -13,6 +13,32 @@ def index():
 def upload():
     return render_template('upload.html')
 
+@app.route('/get_fontes')
+def get_fontes():
+    """
+    Retorna lista de fontes disponíveis
+    """
+    try:
+        import json
+        
+        # Carrega fontes do arquivo JSON
+        try:
+            with open('data/fontes.json', 'r', encoding='utf-8') as f:
+                fontes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            # Fontes padrão caso o arquivo não exista
+            fontes = ['Cartão C6', 'Conta C6', 'Cartão XP', 'Conta XP']
+            
+            # Cria o arquivo com as fontes padrão
+            os.makedirs('data', exist_ok=True)
+            with open('data/fontes.json', 'w', encoding='utf-8') as f:
+                json.dump(fontes, f, ensure_ascii=False, indent=2)
+        
+        return jsonify(fontes)
+        
+    except Exception as e:
+        return jsonify({'error': f'Erro ao carregar fontes: {str(e)}'}), 500
+
 @app.route('/pendentes')
 def pendentes():
     """
@@ -40,10 +66,14 @@ def pendentes():
 def process_upload():
     try:
         file = request.files.get('file')
+        fonte = request.form.get('fonte')
         
         # Validações básicas
         if not file:
             return jsonify({'success': False, 'message': 'Arquivo é obrigatório'})
+        
+        if not fonte:
+            return jsonify({'success': False, 'message': 'Fonte é obrigatória'})
         
         if not file.filename.lower().endswith('.csv'):
             return jsonify({'success': False, 'message': 'Apenas arquivos CSV são suportados'})
@@ -65,6 +95,7 @@ def process_upload():
         from flask import session
         session['temp_file_content'] = base64.b64encode(file_content).decode('utf-8')
         session['temp_file_name'] = file.filename
+        session['temp_fonte'] = fonte
         
         colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(file)
         
@@ -78,7 +109,7 @@ def process_upload():
             })
         
         # Se as colunas estão corretas, processa normalmente
-        transacoes = importador.processar_arquivo(file)
+        transacoes = importador.processar_arquivo(file, fonte)
         importador.salvar_transacoes(transacoes)
         
         # Prepara mensagem de sucesso
@@ -353,12 +384,14 @@ def processar_mapeamento():
         from services.importador import ImportadorTransacoes
         importador = ImportadorTransacoes()
         
-        transacoes = importador.processar_arquivo_com_mapeamento(file_like, mapeamento)
+        fonte = session.get('temp_fonte', 'Não informado')
+        transacoes = importador.processar_arquivo_com_mapeamento(file_like, mapeamento, fonte)
         importador.salvar_transacoes(transacoes)
         
         # Limpa a sessão
         session.pop('temp_file_content', None)
         session.pop('temp_file_name', None)
+        session.pop('temp_fonte', None)
         
         # Prepara mensagem de sucesso
         if importador.novas_transacoes > 0:

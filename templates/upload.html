@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Upload de Arquivos - {{ super() }}{% endblock %}
@@ -16,10 +15,16 @@
             <div class="card-body">
                 <form id="uploadForm" enctype="multipart/form-data">
                     <div class="mb-4">
-                        <label for="file" class="form-label">
-                            <i class="bi bi-file-earmark-spreadsheet me-2"></i>
-                            Selecionar arquivo CSV
+                        <label for="fonte" class="form-label">
+                            <i class="bi bi-credit-card me-2"></i>
+                            Fonte dos Dados
                         </label>
+                        <select class="form-select mb-3" id="fonte" name="fonte" required>
+                            <option value="">Selecione a fonte...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
                         <div class="file-input-wrapper">
                             <input 
                                 type="file" 
@@ -75,6 +80,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileLabel = document.getElementById('fileLabel');
     const uploadForm = document.getElementById('uploadForm');
     const submitBtn = document.getElementById('submitBtn');
+    const fonteSelect = document.getElementById('fonte');
+
+    // Popular o select com as fontes do JSON
+    const fontes = [
+        "Cartão C6",
+        "Conta C6",
+        "Cartão XP",
+        "Conta XP"
+    ];
+
+    fontes.forEach(fonte => {
+        let option = document.createElement("option");
+        option.value = fonte;
+        option.text = fonte;
+        fonteSelect.add(option);
+    });
+
 
     // Atualizar nome do arquivo selecionado
     fileInput.addEventListener('change', function() {
@@ -125,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         this.style.borderColor = '#6c757d';
         this.style.backgroundColor = '#e9ecef';
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             fileInput.files = files;
@@ -146,6 +168,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        if (!fonteSelect.value) {
+            Notiflix.Notify.failure('Por favor, selecione a fonte dos dados');
+            return;
+        }
+
         if (!file.name.toLowerCase().endsWith('.csv')) {
             Notiflix.Notify.failure('Por favor, selecione um arquivo CSV válido');
             return;
@@ -160,7 +187,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         Notiflix.Loading.circle('Processando arquivo...');
 
-        // Enviar arquivo
+        // Envia arquivo
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('fonte', fonteSelect.value);
+
         fetch('/process_upload', {
             method: 'POST',
             body: formData
