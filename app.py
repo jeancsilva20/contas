@@ -1,8 +1,9 @@
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect
 import os
 
 app = Flask(__name__)
+app.secret_key = 'sua_chave_secreta_aqui_123456789'  # Necessário para sessões
 
 @app.route('/')
 def index():
@@ -255,7 +256,6 @@ def mapear_colunas():
     Exibe tela de mapeamento de colunas
     """
     try:
-        from flask import session
         import tempfile
         import base64
         from io import StringIO

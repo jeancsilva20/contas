@@ -32,6 +32,10 @@ class ImportadorTransacoes:
             df = pd.read_csv(arquivo, sep=';', decimal=',', encoding='utf-8', nrows=0)
             colunas_encontradas = df.columns.tolist()
             
+            # Reset do arquivo se for um objeto de arquivo
+            if hasattr(arquivo, 'seek'):
+                arquivo.seek(0)
+            
             # Verifica se todas as colunas obrigatórias estão presentes
             for coluna in colunas_obrigatorias:
                 if coluna not in colunas_encontradas:
