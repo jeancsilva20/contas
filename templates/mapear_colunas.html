@@ -152,10 +152,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.success) {
                 Notiflix.Notify.success(data.message);
-                // Redireciona para a página principal após sucesso
+                // Redireciona para a tela de pendentes após sucesso
                 setTimeout(() => {
-                    window.location.href = '/';
-                }, 2000);
+                    window.location.href = data.redirect_url || '/pendentes';
+                }, 1500);
             } else {
                 Notiflix.Notify.failure(data.message);
                 // Reabilita o botão

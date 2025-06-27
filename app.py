@@ -127,30 +127,13 @@ def process_upload():
         session['temp_file_name'] = file.filename
         session['temp_fonte'] = fonte
         
-        colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(file)
-        
-        if not colunas_validas:
-            # Redireciona para a tela de mapeamento
-            return jsonify({
-                'success': False, 
-                'requires_mapping': True,
-                'message': 'Arquivo requer mapeamento de colunas',
-                'redirect_url': '/mapear_colunas'
-            })
-        
-        # Se as colunas estão corretas, processa normalmente
-        transacoes = importador.processar_arquivo(file, fonte)
-        importador.salvar_transacoes(transacoes)
-        
-        # Prepara mensagem de sucesso
-        if importador.novas_transacoes > 0:
-            message = f'Importação concluída! {importador.novas_transacoes} novas transações adicionadas.'
-            if importador.pendentes_adicionadas > 0:
-                message += f' {importador.pendentes_adicionadas} transações enviadas para revisão.'
-        else:
-            message = 'Arquivo processado, mas nenhuma transação nova foi encontrada.'
-        
-        return jsonify({'success': True, 'message': message})
+        # Sempre redireciona para a tela de mapeamento, independente do conteúdo
+        return jsonify({
+            'success': False, 
+            'requires_mapping': True,
+            'message': 'Redirecionando para mapeamento de colunas.',
+            'redirect_url': '/mapear_colunas'
+        })
         
     except ValueError as e:
         # Erros de validação
@@ -454,7 +437,8 @@ def processar_mapeamento():
         else:
             message = 'Arquivo processado, mas nenhuma transação nova foi encontrada.'
         
-        return jsonify({'success': True, 'message': message})
+        # Direciona para a tela de pendentes após processamento
+        return jsonify({'success': True, 'message': message, 'redirect_url': '/pendentes'})
         
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erro ao processar mapeamento: {str(e)}'})
