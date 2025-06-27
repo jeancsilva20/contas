@@ -1,0 +1,71 @@
+🎯 Prompt Replit – Etapa 1: Estrutura base com Flask e Frontend Material Design
+Objetivo: Criar a estrutura base de um sistema de gestão de contas pessoais usando Flask, com frontend acoplado utilizando Material Design 5 via Web Components, Notiflix para notificações e loading, e com suporte a importação futura de faturas e extratos.
+
+✅ Especificações técnicas da Etapa 1:
+📁 Estrutura de diretórios esperada:
+bash
+Copiar
+Editar
+/contas_pessoais/
+│
+├── app.py                        # Arquivo principal do Flask
+├── templates/
+│   ├── base.html                 # Layout base com Material Web e Notiflix
+│   └── upload.html               # Tela de upload de fatura/extrato
+│
+├── static/
+│   ├── css/
+│   └── js/
+│
+├── data/                         # Armazenamento local (vazio por enquanto)
+│
+└── requirements.txt              # Dependências do projeto
+🧩 Funcionalidades mínimas:
+Página de upload de arquivos protegidos por senha (input para arquivo .xlsx/.csv + campo de senha)
+
+Estilização com Material Design 5 via Web Components (@material/web)
+
+Integração do Notiflix para notificações e loading (CDN)
+
+Nenhum processamento real ainda — o objetivo é montar a base visual e estrutural.
+
+🧱 Componentes na página /upload:
+<mwc-textfield> para inserir a senha do arquivo
+
+<input type="file"> para escolher o arquivo
+
+<mwc-button> para acionar o envio (com efeito visual)
+
+Script do Notiflix para exibir uma notificação de sucesso ou falha (mock)
+
+🌐 Bibliotecas externas necessárias via CDN:
+Material Web Components:
+
+html
+Copiar
+Editar
+<script type="module" src="https://unpkg.com/@material/web/all.js"></script>
+Notiflix:
+
+html
+Copiar
+Editar
+<script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-aio-3.2.6.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notiflix@3.2.6/dist/notiflix-3.2.6.min.css" />
+📝 Requisitos de requirements.txt:
+nginx
+Copiar
+Editar
+Flask
+🎯 Resultado esperado:
+Ao acessar http://localhost:5000/upload, o usuário verá uma página estilizada com Material Design e poderá:
+
+Selecionar um arquivo
+
+Inserir a senha
+
+Clicar em "Importar"
+
+Ver uma notificação simulada com Notiflix (ex: "Importação iniciada...")
+
+Deseja que eu gere o código dessa estrutura para você copiar direto no Replit? Posso começar pelo app.py e templates/base.html.
