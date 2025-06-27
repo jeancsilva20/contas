@@ -297,17 +297,6 @@
     "observacoes": "Cartão: BOTICARIO PRODUTOS DE BELEZA LTDA"
   },
   {
-    "id": "cartao_1751056552_28",
-    "tipo": "cartao",
-    "data": "2025-06-09",
-    "descricao": "EZG0421-CCR AUTOBAN  SP348 7743 SUL ITUP",
-    "valor": 12.8,
-    "tipo_movimento": "saida",
-    "fonte": "Conta C6",
-    "hash": "36bada834d6c20cd2e7819090d03d93a3c703d9a6b056982576f65285b657ecd",
-    "observacoes": "Cartão: C6TAG PEDAGIO"
-  },
-  {
     "id": "cartao_1751056552_29",
     "tipo": "cartao",
     "data": "2025-06-09",
