@@ -28,7 +28,7 @@ app.secret_key = 'sua_chave_secreta_aqui_123456789'  # Necessário para sessões
 
 @app.route('/')
 def index():
-    return render_template('upload.html')
+    return redirect('/resumo')
 
 @app.route('/upload')
 def upload():
