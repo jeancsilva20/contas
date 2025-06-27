@@ -516,6 +516,45 @@ def salvar_revisao():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erro ao salvar revisão: {str(e)}'})
 
+@app.route('/excluir_pendente', methods=['POST'])
+def excluir_pendente():
+    """
+    Remove uma transação da lista de pendentes
+    """
+    try:
+        import json
+        
+        dados = request.get_json()
+        
+        # Validações básicas
+        if not dados or not dados.get('hash'):
+            return jsonify({'success': False, 'message': 'Hash da transação é obrigatório'})
+        
+        hash_transacao = dados['hash']
+        
+        # Carrega pendentes atuais
+        try:
+            with open('data/pendentes.json', 'r', encoding='utf-8') as f:
+                pendentes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify({'success': False, 'message': 'Lista de pendentes não encontrada'})
+        
+        # Filtra removendo a transação com o hash especificado
+        pendentes_filtrados = [p for p in pendentes if p.get('hash') != hash_transacao]
+        
+        # Verifica se a transação foi encontrada
+        if len(pendentes_filtrados) == len(pendentes):
+            return jsonify({'success': False, 'message': 'Transação não encontrada na lista de pendentes'})
+        
+        # Salva a lista atualizada
+        with open('data/pendentes.json', 'w', encoding='utf-8') as f:
+            json.dump(pendentes_filtrados, f, ensure_ascii=False, indent=2)
+        
+        return jsonify({'success': True, 'message': 'Transação removida com sucesso!'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro ao excluir transação: {str(e)}'})
+
 @app.route('/exportar_rateio_csv')
 def exportar_rateio_csv():
     """

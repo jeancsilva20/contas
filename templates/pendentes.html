@@ -54,19 +54,27 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary btn-sm revisar-btn" 
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalRevisao"
-                                                data-hash="{{ transacao.hash }}"
-                                                data-id="{{ transacao.id }}"
-                                                data-data="{{ transacao.data }}"
-                                                data-descricao="{{ transacao.descricao }}"
-                                                data-valor="{{ transacao.valor }}"
-                                                data-fonte="{{ transacao.fonte }}"
-                                                data-observacoes="{{ transacao.observacoes or '' }}">
-                                            <i class="bi bi-pencil-square me-1"></i>
-                                            Revisar
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-primary btn-sm revisar-btn" 
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalRevisao"
+                                                    data-hash="{{ transacao.hash }}"
+                                                    data-id="{{ transacao.id }}"
+                                                    data-data="{{ transacao.data }}"
+                                                    data-descricao="{{ transacao.descricao }}"
+                                                    data-valor="{{ transacao.valor }}"
+                                                    data-fonte="{{ transacao.fonte }}"
+                                                    data-observacoes="{{ transacao.observacoes or '' }}">
+                                                <i class="bi bi-pencil-square me-1"></i>
+                                                Revisar
+                                            </button>
+                                            <button class="btn btn-danger btn-sm excluir-btn"
+                                                    data-hash="{{ transacao.hash }}"
+                                                    data-descricao="{{ transacao.descricao }}"
+                                                    title="Excluir transação">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -245,7 +253,7 @@ $(document).ready(function() {
                 targets: 5, // Coluna Ações
                 orderable: false,
                 className: 'text-center',
-                width: '120px'
+                width: '160px'
             }
         ]
     });
@@ -298,6 +306,31 @@ $(document).ready(function() {
         if (validarFormulario()) {
             salvarRevisao();
         }
+    });
+
+    // Event listener para botão excluir
+    $(document).on('click', '.excluir-btn', function() {
+        const hash = $(this).data('hash');
+        const descricao = $(this).data('descricao');
+
+        Notiflix.Confirm.show(
+            'Confirmar Exclusão',
+            `Tem certeza que deseja excluir a transação "${descricao}"?\n\nEsta ação não pode ser desfeita. Se a transação for importada novamente, ela aparecerá na lista.`,
+            'Sim, Excluir',
+            'Cancelar',
+            function okCb() {
+                excluirTransacao(hash);
+            },
+            function cancelCb() {
+                // Não faz nada
+            },
+            {
+                width: '400px',
+                borderRadius: '8px',
+                titleColor: '#dc3545',
+                okButtonBackground: '#dc3545',
+            }
+        );
     });
 
     function gerarCamposPercentual() {
@@ -428,6 +461,37 @@ $(document).ready(function() {
             // Restaurar botão
             btn.prop('disabled', false);
             btn.html('<i class="bi bi-check-circle me-1"></i>Confirmar Revisão');
+        });
+    }
+
+    function excluirTransacao(hash) {
+        Notiflix.Loading.circle('Excluindo transação...');
+
+        fetch('/excluir_pendente', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({hash: hash})
+        })
+        .then(response => response.json())
+        .then(data => {
+            Notiflix.Loading.remove();
+
+            if (data.success) {
+                Notiflix.Notify.success('Transação excluída com sucesso!');
+                
+                // Recarregar página para atualizar a tabela
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                Notiflix.Notify.failure(data.message || 'Erro ao excluir transação');
+            }
+        })
+        .catch(error => {
+            Notiflix.Loading.remove();
+            Notiflix.Notify.failure('Erro ao excluir transação: ' + error.message);
         });
     }
 });
