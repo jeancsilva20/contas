@@ -83,19 +83,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const fonteSelect = document.getElementById('fonte');
 
     // Popular o select com as fontes do JSON
-    const fontes = [
-        "Cartão C6",
-        "Conta C6",
-        "Cartão XP",
-        "Conta XP"
-    ];
-
-    fontes.forEach(fonte => {
-        let option = document.createElement("option");
-        option.value = fonte;
-        option.text = fonte;
-        fonteSelect.add(option);
-    });
+    fetch('/get_fontes')
+        .then(response => response.json())
+        .then(fontes => {
+            fontes.forEach(fonte => {
+                let option = document.createElement("option");
+                option.value = fonte;
+                option.text = fonte;
+                fonteSelect.add(option);
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao carregar fontes:', error);
+            // Fontes padrão em caso de erro
+            const fontesPadrao = ["Cartão C6", "Conta C6", "Cartão XP", "Conta XP"];
+            fontesPadrao.forEach(fonte => {
+                let option = document.createElement("option");
+                option.value = fonte;
+                option.text = fonte;
+                fonteSelect.add(option);
+            });
+        });
 
 
     // Atualizar nome do arquivo selecionado
