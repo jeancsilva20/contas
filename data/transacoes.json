@@ -1505,5 +1505,16 @@
     "fonte": "Conta C6",
     "hash": "dfbafcce98654e2de3f86597447c1a6f826f26d8fca32ed146e90950633e416b",
     "observacoes": "Cartão: Pix recebido de JEAN CARLOS DA SILVA"
+  },
+  {
+    "id": "manual_1751063286",
+    "tipo": "manual",
+    "data": "2025-06-27",
+    "descricao": "Teste de nova despesa",
+    "valor": 500.0,
+    "tipo_movimento": "saida",
+    "fonte": "Manual",
+    "hash": "e48ee6e658094b4516ebfbe2d05fce67e67715264636a061386b4bd2f5329be2",
+    "observacoes": "Categoria: Categoria | Observações"
   }
 ]

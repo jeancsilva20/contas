@@ -45,5 +45,29 @@
     "comentarios": "",
     "data_revisao": "2025-06-27T22:15:09.627722",
     "revisado_por": "Usuario"
+  },
+  {
+    "hash": "e48ee6e658094b4516ebfbe2d05fce67e67715264636a061386b4bd2f5329be2",
+    "id_original": "manual_1751063286",
+    "nova_descricao": "Teste de nova despesa",
+    "donos": {
+      "Jean": 34,
+      "João Batista": 33,
+      "Tati": 33
+    },
+    "comentarios": "Comentários",
+    "data_revisao": "2025-06-27T22:28:06.344262",
+    "revisado_por": "Manual"
+  },
+  {
+    "hash": "dfbafcce98654e2de3f86597447c1a6f826f26d8fca32ed146e90950633e416b",
+    "id_original": "cartao_1751061990_41",
+    "nova_descricao": "Pix para Jean Silva",
+    "donos": {
+      "João Rafael": 100
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T22:33:10.457735",
+    "revisado_por": "Usuario"
   }
 ]
