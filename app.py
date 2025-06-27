@@ -193,7 +193,13 @@ def resumo():
             if data_fim and data_str > data_fim:
                 continue
             
-            valor = abs(transacao['valor'])  # Usa valor absoluto para soma
+            # Para entradas (valores negativos), mantém como negativo no cálculo
+            # Para saídas (valores positivos), usa valor absoluto
+            if transacao.get('tipo_movimento') == 'entrada':
+                valor = transacao['valor']  # Mantém negativo para entradas
+            else:
+                valor = abs(transacao['valor'])  # Valor absoluto para saídas
+            
             donos = revisao.get('donos', {})
             
             # Aplica filtro de responsável
@@ -330,7 +336,12 @@ def rateio():
             if data_fim and data_str > data_fim:
                 continue
             
-            valor = abs(transacao['valor'])  # Usa valor absoluto
+            # Para entradas, mantém valor negativo; para saídas, usa absoluto
+            if transacao.get('tipo_movimento') == 'entrada':
+                valor = transacao['valor']  # Negativo para entradas
+            else:
+                valor = abs(transacao['valor'])  # Positivo para saídas
+            
             total_geral += valor
             total_transacoes += 1
             

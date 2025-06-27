@@ -229,19 +229,30 @@ class ImportadorTransacoes:
                     valor_recebido_str = valor_recebido_str.replace('"', '')
                     valor_recebido = float(valor_recebido_str)
                 
-                # Determina valor final e tipo de movimento
-                if valor_recebido > 0:
-                    # É um estorno/entrada
+                # Aplica regras para determinar tipo de movimento e valor final
+                tipo_movimento = 'saida'  # Padrão
+                valor_final = 0
+                
+                if valor_recebido == 0 and valor < 0:
+                    # Regra: Valor Recebido = 0 e Valor < 0 = Entrada
+                    tipo_movimento = 'entrada'
+                    valor_final = abs(valor)  # Valor absoluto para cálculos internos
+                elif valor == 0 and valor_recebido > 0:
+                    # Regra: Valor = 0 e Valor Recebido > 0 = Entrada
+                    tipo_movimento = 'entrada'
                     valor_final = valor_recebido
+                elif valor > 0 and valor_recebido == 0:
+                    # Regra: Valor > 0 e Valor Recebido = 0 = Saída
+                    tipo_movimento = 'saida'
+                    valor_final = valor
+                elif valor_recebido > 0:
+                    # Valor recebido tem prioridade (entrada)
                     tipo_movimento = 'entrada'
-                elif valor < 0:
-                    # Valor negativo no cartão também é estorno
-                    valor_final = abs(valor)
-                    tipo_movimento = 'entrada'
+                    valor_final = valor_recebido
                 else:
                     # Saída normal
-                    valor_final = abs(valor)
                     tipo_movimento = 'saida'
+                    valor_final = abs(valor)
 
                 # Pula valores zerados
                 if valor_final == 0:
@@ -277,13 +288,16 @@ class ImportadorTransacoes:
                 if transacao_existe(hash_transacao):
                     continue
 
+                # Para entradas, o valor deve ser negativo para exibição
+                valor_para_armazenar = -valor_final if tipo_movimento == 'entrada' else valor_final
+                
                 # Cria objeto de transação
                 transacao = {
                     'id': f"cartao_{int(datetime.now().timestamp())}_{len(transacoes)}",
                     'tipo': 'cartao',
                     'data': data.strftime('%Y-%m-%d'),
                     'descricao': descricao,
-                    'valor': valor_final,
+                    'valor': valor_para_armazenar,
                     'tipo_movimento': tipo_movimento,
                     'fonte': fonte,
                     'hash': hash_transacao,
@@ -338,11 +352,10 @@ class ImportadorTransacoes:
         pendentes = self._carregar_json('data/pendentes.json')
         hashes_pendentes = {p.get('hash') for p in pendentes if p.get('hash')}
 
-        # Filtra transações de saída que não foram revisadas e não estão nos pendentes
+        # Filtra transações (saídas e entradas) que não foram revisadas e não estão nos pendentes
         novas_pendentes = [
             t for t in transacoes 
-            if (t['tipo_movimento'] == 'saida' and 
-                t['hash'] not in hashes_revisados and 
+            if (t['hash'] not in hashes_revisados and 
                 t['hash'] not in hashes_pendentes)
         ]
 

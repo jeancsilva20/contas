@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Transações Pendentes{% endblock %}
@@ -35,14 +34,22 @@
                                         <span class="badge bg-secondary">{{ transacao.data }}</span>
                                     </td>
                                     <td>
-                                        <strong>{{ transacao.descricao }}</strong>
-                                    </td>
-                                    <td>
-                                        <span class="value-negative">
-                                            <i class="bi bi-arrow-down-circle me-1"></i>
-                                            R$ {{ "%.2f"|format(transacao.valor) }}
-                                        </span>
-                                    </td>
+                                {{ transacao.descricao }}
+                                {% if transacao.tipo_movimento == 'entrada' %}
+                                    <span class="badge bg-success ms-2">Entrada</span>
+                                {% else %}
+                                    <span class="badge bg-danger ms-2">Saída</span>
+                                {% endif %}
+                            </td>
+                                    <td class="text-end">
+                                <span class="{% if transacao.tipo_movimento == 'entrada' %}valor-entrada{% else %}valor-saida{% endif %}">
+                                    {% if transacao.tipo_movimento == 'entrada' %}
+                                        -R$ {{ "%.2f"|format(transacao.valor|abs) }}
+                                    {% else %}
+                                        R$ {{ "%.2f"|format(transacao.valor|abs) }}
+                                    {% endif %}
+                                </span>
+                            </td>
                                     <td>
                                         <span class="badge bg-info">{{ transacao.fonte }}</span>
                                     </td>
@@ -439,7 +446,7 @@ $(document).ready(function() {
 
             if (data.success) {
                 Notiflix.Notify.success('Revisão salva com sucesso!');
-                
+
                 // Fechar modal
                 const modalElement = document.getElementById('modalRevisao');
                 const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
@@ -480,7 +487,7 @@ $(document).ready(function() {
 
             if (data.success) {
                 Notiflix.Notify.success('Transação excluída com sucesso!');
-                
+
                 // Recarregar página para atualizar a tabela
                 setTimeout(() => {
                     window.location.reload();
@@ -497,3 +504,25 @@ $(document).ready(function() {
 });
 </script>
 {% endblock %}
+
+<style>
+    .valor-positivo {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+    .valor-negativo {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .valor-entrada {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+    .valor-saida {
+        color: #dc3545;
+        font-weight: 600;
+    }
+</style>
