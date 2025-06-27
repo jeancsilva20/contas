@@ -77,5 +77,18 @@
     "comentarios": "",
     "data_revisao": "2025-06-27T18:51:44.838168",
     "revisado_por": "Usuario"
+  },
+  {
+    "hash": "53e2b741c0f65b114c1f7c0da885b21ede1e01dd223f6dfc898eca3c5b890484",
+    "id_original": "cartao_1751044823_15",
+    "nova_descricao": "Remédio Clips",
+    "donos": {
+      "Jean": 34,
+      "João Rafael": 33,
+      "Juliano": 33
+    },
+    "comentarios": "",
+    "data_revisao": "2025-06-27T20:01:26.734481",
+    "revisado_por": "Usuario"
   }
 ]

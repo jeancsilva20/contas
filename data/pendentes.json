@@ -121,17 +121,6 @@
     "observacoes": "Parcela: Única | Categoria: Assistência médica e odontológica | Cartão: JEAN C SILVA"
   },
   {
-    "id": "cartao_1751044823_15",
-    "tipo": "cartao",
-    "data": "2025-05-02",
-    "descricao": "NOVO EMPORIO RURAL",
-    "valor": 99.9,
-    "tipo_movimento": "saida",
-    "fonte": "Cartão de Crédito",
-    "hash": "53e2b741c0f65b114c1f7c0da885b21ede1e01dd223f6dfc898eca3c5b890484",
-    "observacoes": "Parcela: Única | Categoria: Especialidade varejo | Cartão: JEAN C SILVA"
-  },
-  {
     "id": "cartao_1751044823_16",
     "tipo": "cartao",
     "data": "2025-05-03",
