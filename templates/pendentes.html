@@ -82,113 +82,72 @@
     </div>
 </div>
 
-<!-- Modal de Revisão -->
-<div id="modal-revisao" class="modal modal-fixed-footer">
-    <div class="modal-content">
-        <h4>Revisar Transação</h4>
-        
-        <div class="row">
-            <div class="col s12">
-                <div class="card-panel grey lighten-4">
-                    <h6>Detalhes da Transação</h6>
-                    <p><strong>Data:</strong> <span id="modal-data"></span></p>
-                    <p><strong>Descrição Original:</strong> <span id="modal-descricao-original"></span></p>
-                    <p><strong>Valor:</strong> <span id="modal-valor"></span></p>
-                    <p><strong>Fonte:</strong> <span id="modal-fonte"></span></p>
-                </div>
+<!-- Material Web Dialog de Revisão -->
+<md-dialog id="modal-revisao">
+    <div slot="headline">Revisar Transação</div>
+    <div slot="content">
+        <div class="dialog-content">
+            <div class="info-card">
+                <h6>Detalhes da Transação</h6>
+                <p><strong>Data:</strong> <span id="modal-data"></span></p>
+                <p><strong>Descrição Original:</strong> <span id="modal-descricao-original"></span></p>
+                <p><strong>Valor:</strong> <span id="modal-valor"></span></p>
+                <p><strong>Fonte:</strong> <span id="modal-fonte"></span></p>
             </div>
-        </div>
 
-        <form id="form-revisao">
-            <input type="hidden" id="transacao-hash" />
-            <input type="hidden" id="transacao-id" />
-            
-            <div class="row">
-                <div class="input-field col s12">
-                    <input type="text" id="nova-descricao" required>
+            <form id="form-revisao">
+                <input type="hidden" id="transacao-hash" />
+                <input type="hidden" id="transacao-id" />
+                
+                <div class="form-field">
                     <label for="nova-descricao">Nova Descrição</label>
+                    <input type="text" id="nova-descricao" required>
                 </div>
-            </div>
 
-            <div class="row">
-                <div class="col s12">
-                    <h6>Dono(s) do Custo</h6>
-                    <div class="row" style="margin-bottom: 0;">
-                        <div class="col s4">
-                            <p>
-                                <label>
-                                    <input type="checkbox" class="filled-in pessoa-checkbox" id="jean" data-pessoa="Jean" />
-                                    <span>Jean</span>
-                                </label>
-                            </p>
+                <div class="form-field">
+                    <label>Dono(s) do Custo</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" class="pessoa-checkbox" id="jean" data-pessoa="Jean" />
+                            <label for="jean">Jean</label>
                         </div>
-                        <div class="col s4">
-                            <p>
-                                <label>
-                                    <input type="checkbox" class="filled-in pessoa-checkbox" id="joao-rafael" data-pessoa="João Rafael" />
-                                    <span>João Rafael</span>
-                                </label>
-                            </p>
+                        <div class="checkbox-item">
+                            <input type="checkbox" class="pessoa-checkbox" id="joao-rafael" data-pessoa="João Rafael" />
+                            <label for="joao-rafael">João Rafael</label>
                         </div>
-                        <div class="col s4">
-                            <p>
-                                <label>
-                                    <input type="checkbox" class="filled-in pessoa-checkbox" id="juliano" data-pessoa="Juliano" />
-                                    <span>Juliano</span>
-                                </label>
-                            </p>
+                        <div class="checkbox-item">
+                            <input type="checkbox" class="pessoa-checkbox" id="juliano" data-pessoa="Juliano" />
+                            <label for="juliano">Juliano</label>
                         </div>
-                    </div>
-                    <div class="row" style="margin-bottom: 0;">
-                        <div class="col s4">
-                            <p>
-                                <label>
-                                    <input type="checkbox" class="filled-in pessoa-checkbox" id="tati" data-pessoa="Tati" />
-                                    <span>Tati</span>
-                                </label>
-                            </p>
+                        <div class="checkbox-item">
+                            <input type="checkbox" class="pessoa-checkbox" id="tati" data-pessoa="Tati" />
+                            <label for="tati">Tati</label>
                         </div>
-                        <div class="col s4">
-                            <p>
-                                <label>
-                                    <input type="checkbox" class="filled-in pessoa-checkbox" id="joao-batista" data-pessoa="João Batista" />
-                                    <span>João Batista</span>
-                                </label>
-                            </p>
+                        <div class="checkbox-item">
+                            <input type="checkbox" class="pessoa-checkbox" id="joao-batista" data-pessoa="João Batista" />
+                            <label for="joao-batista">João Batista</label>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div id="percentuais-container" class="row" style="display: none;">
-                <div class="col s12">
-                    <h6>Percentual de Cada Pessoa</h6>
-                    <div id="percentuais-campos"></div>
-                    <div class="row">
-                        <div class="col s12">
-                            <span id="total-percentual" class="red-text">Total: 0%</span>
-                        </div>
-                    </div>
+                <div id="percentuais-container" class="form-field" style="display: none;">
+                    <label>Percentual de Cada Pessoa</label>
+                    <div id="percentuais-campos" class="percentual-grid"></div>
+                    <div id="total-percentual" class="total-percentual invalid">Total: 0%</div>
                 </div>
-            </div>
 
-            <div class="row">
-                <div class="input-field col s12">
-                    <textarea id="comentarios" class="materialize-textarea"></textarea>
+                <div class="form-field">
                     <label for="comentarios">Comentários</label>
+                    <textarea id="comentarios" rows="3"></textarea>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-    
-    <div class="modal-footer">
-        <button type="button" class="modal-close waves-effect waves-grey btn-flat">Cancelar</button>
-        <button type="button" id="confirmar-revisao" class="btn waves-effect waves-light green">
-            <i class="material-icons left">check</i>
-            Confirmar Revisão
-        </button>
+    <div slot="actions">
+        <md-text-button id="cancelar-revisao">Cancelar</md-text-button>
+        <md-filled-button id="confirmar-revisao">Confirmar Revisão</md-filled-button>
     </div>
-</div>
+</md-dialog>
 
 <script>
 $(document).ready(function() {
@@ -227,9 +186,6 @@ $(document).ready(function() {
         ]
     });
 
-    // Inicializar modal
-    $('.modal').modal();
-
     // Event listener para botões de revisar
     $(document).on('click', '.revisar-btn', function() {
         const hash = $(this).data('hash');
@@ -255,11 +211,8 @@ $(document).ready(function() {
         $('#percentuais-container').hide();
         $('#percentuais-campos').empty();
         
-        // Atualizar labels do Materialize
-        M.updateTextFields();
-        
-        // Abrir modal
-        $('#modal-revisao').modal('open');
+        // Abrir modal Material Web
+        document.querySelector('#modal-revisao').show();
     });
 
     // Event listener para checkboxes de pessoas
@@ -279,6 +232,11 @@ $(document).ready(function() {
         calcularTotalPercentual();
     });
 
+    // Event listener para cancelar revisão
+    $('#cancelar-revisao').click(function() {
+        document.querySelector('#modal-revisao').close();
+    });
+
     // Event listener para confirmar revisão
     $('#confirmar-revisao').click(function() {
         if (validarFormulario()) {
@@ -296,10 +254,10 @@ $(document).ready(function() {
             const percentualPadrao = Math.round(100 / pessoasSelecionadas.length);
             
             const campo = $(`
-                <div class="input-field col s6">
+                <div class="form-field">
+                    <label>${pessoa} (%)</label>
                     <input type="number" class="percentual-input" data-pessoa="${pessoa}" 
                            min="0" max="100" step="1" value="${percentualPadrao}" required>
-                    <label class="active">${pessoa} (%)</label>
                 </div>
             `);
             container.append(campo);
@@ -315,13 +273,13 @@ $(document).ready(function() {
             total += parseInt($(this).val()) || 0;
         });
 
-        const totalSpan = $('#total-percentual');
-        totalSpan.text('Total: ' + total + '%');
+        const totalDiv = $('#total-percentual');
+        totalDiv.text('Total: ' + total + '%');
         
         if (total === 100) {
-            totalSpan.removeClass('red-text').addClass('green-text');
+            totalDiv.removeClass('invalid').addClass('valid');
         } else {
-            totalSpan.removeClass('green-text').addClass('red-text');
+            totalDiv.removeClass('valid').addClass('invalid');
         }
     }
 
@@ -383,7 +341,7 @@ $(document).ready(function() {
             
             if (data.success) {
                 Notiflix.Notify.success('Revisão salva com sucesso!');
-                $('#modal-revisao').modal('close');
+                document.querySelector('#modal-revisao').close();
                 
                 // Recarregar página para atualizar a tabela
                 setTimeout(() => {

@@ -14,6 +14,21 @@
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 
+    <!-- Material Web CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "@material/web/": "https://esm.run/@material/web/"
+      }
+    }
+    </script>
+    <script type="module">
+      import '@material/web/all.js';
+      import {styles as typescaleStyles} from '@material/web/typography/md-typescale-styles.js';
+      document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+    </script>
+
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
@@ -159,9 +174,111 @@
         table.dataTable tbody tr:hover {
             background-color: #f5f5f5;
         }
-    </style>
 
-    <script type="importmap">
+        /* Material Web Dialog customization */
+        md-dialog {
+            --md-dialog-container-color: white;
+            --md-dialog-headline-color: #1976d2;
+            max-width: 800px;
+        }
+
+        md-dialog [slot="headline"] {
+            font-weight: 500;
+            font-size: 1.5rem;
+        }
+
+        md-dialog [slot="content"] {
+            color: #424242;
+        }
+
+        .dialog-content {
+            padding: 16px 0;
+        }
+
+        .form-field {
+            margin-bottom: 16px;
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #1976d2;
+        }
+
+        .form-field input, .form-field textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-field input:focus, .form-field textarea:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+
+        .percentual-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .info-card {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .info-card h6 {
+            margin: 0 0 12px 0;
+            color: #1976d2;
+            font-weight: 500;
+        }
+
+        .info-card p {
+            margin: 4px 0;
+            font-size: 14px;
+        }
+
+        .total-percentual {
+            font-weight: 500;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .total-percentual.valid {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .total-percentual.invalid {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+    </style>
         {
             "imports": {
                 "@material/web/": "https://esm.run/@material/web/"
