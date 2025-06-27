@@ -1,0 +1,352 @@
+
+{% extends "base.html" %}
+
+{% block title %}Nova Despesa Manual{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Nova Despesa Manual
+                </h2>
+                <a href="/resumo" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form id="despesaForm">
+                        <div class="row">
+                            <!-- Data -->
+                            <div class="col-md-6 mb-3">
+                                <label for="data" class="form-label">Data da Despesa *</label>
+                                <input type="date" class="form-control" id="data" name="data" required>
+                            </div>
+
+                            <!-- Fonte (readonly) -->
+                            <div class="col-md-6 mb-3">
+                                <label for="fonte" class="form-label">Fonte de Dados</label>
+                                <input type="text" class="form-control" id="fonte" name="fonte" value="Manual" readonly>
+                            </div>
+
+                            <!-- Descrição -->
+                            <div class="col-12 mb-3">
+                                <label for="descricao" class="form-label">Descrição *</label>
+                                <input type="text" class="form-control" id="descricao" name="descricao" placeholder="Descrição da despesa" required>
+                            </div>
+
+                            <!-- Valor -->
+                            <div class="col-md-6 mb-3">
+                                <label for="valor" class="form-label">Valor (R$) *</label>
+                                <input type="number" class="form-control" id="valor" name="valor" step="0.01" placeholder="0,00" required>
+                                <div class="form-text">Use valores negativos para entradas (ex: -100.00)</div>
+                            </div>
+
+                            <!-- Categoria -->
+                            <div class="col-md-6 mb-3">
+                                <label for="categoria" class="form-label">Categoria</label>
+                                <input type="text" class="form-control" id="categoria" name="categoria" placeholder="Categoria da despesa">
+                            </div>
+
+                            <!-- Observações -->
+                            <div class="col-12 mb-3">
+                                <label for="observacoes" class="form-label">Observações</label>
+                                <textarea class="form-control" id="observacoes" name="observacoes" rows="2" placeholder="Observações adicionais"></textarea>
+                            </div>
+
+                            <!-- Comentários -->
+                            <div class="col-12 mb-4">
+                                <label for="comentarios" class="form-label">Comentários</label>
+                                <textarea class="form-control" id="comentarios" name="comentarios" rows="2" placeholder="Comentários sobre a despesa"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Rateio -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-people me-2"></i>Rateio da Despesa
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Pessoas Responsáveis *</label>
+                                        <div id="pessoas-container">
+                                            {% if pessoas_existentes %}
+                                                {% for pessoa in pessoas_existentes %}
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="pessoa_{{ loop.index }}" value="{{ pessoa }}">
+                                                    <label class="form-check-label" for="pessoa_{{ loop.index }}">{{ pessoa }}</label>
+                                                </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="mt-2">
+                                            <div class="input-group" style="max-width: 300px;">
+                                                <input type="text" class="form-control form-control-sm" id="nova-pessoa" placeholder="Nova pessoa">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" id="adicionar-pessoa">
+                                                    <i class="bi bi-plus"></i> Adicionar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="percentuais-container" style="display: none;">
+                                    <h6>Percentuais de Rateio</h6>
+                                    <div id="percentuais-campos"></div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">Total: <span id="total-percentual">0</span>%</small>
+                                        <div id="aviso-percentual" class="text-danger small" style="display: none;">
+                                            O total deve ser exatamente 100%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary" id="salvar-btn" disabled>
+                                    <i class="bi bi-check-circle me-2"></i>Salvar Despesa
+                                </button>
+                                <a href="/resumo" class="btn btn-secondary ms-2">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('despesaForm');
+    const salvarBtn = document.getElementById('salvar-btn');
+    const pessoasContainer = document.getElementById('pessoas-container');
+    const percentuaisContainer = document.getElementById('percentuais-container');
+    const percentuaisCampos = document.getElementById('percentuais-campos');
+    const totalPercentualSpan = document.getElementById('total-percentual');
+    const avisoPercentual = document.getElementById('aviso-percentual');
+    const novaPessoaInput = document.getElementById('nova-pessoa');
+    const adicionarPessoaBtn = document.getElementById('adicionar-pessoa');
+
+    // Define data atual como padrão
+    document.getElementById('data').valueAsDate = new Date();
+
+    // Adicionar nova pessoa
+    adicionarPessoaBtn.addEventListener('click', function() {
+        const nomePessoa = novaPessoaInput.value.trim();
+        if (nomePessoa) {
+            // Verifica se já existe
+            const checkboxes = pessoasContainer.querySelectorAll('.pessoa-checkbox');
+            let jaExiste = false;
+            checkboxes.forEach(checkbox => {
+                if (checkbox.value === nomePessoa) {
+                    jaExiste = true;
+                }
+            });
+
+            if (!jaExiste) {
+                const checkboxId = 'pessoa_' + Date.now();
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'form-check form-check-inline';
+                checkboxDiv.innerHTML = `
+                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="${checkboxId}" value="${nomePessoa}">
+                    <label class="form-check-label" for="${checkboxId}">${nomePessoa}</label>
+                `;
+                pessoasContainer.appendChild(checkboxDiv);
+                
+                // Adiciona event listener ao novo checkbox
+                checkboxDiv.querySelector('.pessoa-checkbox').addEventListener('change', atualizarPercentuais);
+                
+                novaPessoaInput.value = '';
+            } else {
+                Notiflix.Notify.warning('Pessoa já existe na lista');
+            }
+        }
+    });
+
+    // Event listener para checkboxes existentes
+    document.querySelectorAll('.pessoa-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', atualizarPercentuais);
+    });
+
+    // Enter para adicionar pessoa
+    novaPessoaInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            adicionarPessoaBtn.click();
+        }
+    });
+
+    function atualizarPercentuais() {
+        const pessoasSelecionadas = document.querySelectorAll('.pessoa-checkbox:checked');
+        
+        if (pessoasSelecionadas.length > 0) {
+            percentuaisContainer.style.display = 'block';
+            gerarCamposPercentual(pessoasSelecionadas);
+        } else {
+            percentuaisContainer.style.display = 'none';
+        }
+        
+        validarFormulario();
+    }
+
+    function gerarCamposPercentual(pessoasSelecionadas) {
+        percentuaisCampos.innerHTML = '';
+        
+        const percentualPadrao = Math.floor(100 / pessoasSelecionadas.length);
+        let percentualRestante = 100 - (percentualPadrao * pessoasSelecionadas.length);
+        
+        pessoasSelecionadas.forEach((checkbox, index) => {
+            const percentual = percentualPadrao + (index === 0 ? percentualRestante : 0);
+            
+            const div = document.createElement('div');
+            div.className = 'row mb-2';
+            div.innerHTML = `
+                <div class="col-6">
+                    <label class="form-label">${checkbox.value}</label>
+                </div>
+                <div class="col-6">
+                    <div class="input-group">
+                        <input type="number" class="form-control percentual-input" 
+                               data-pessoa="${checkbox.value}" 
+                               value="${percentual}" 
+                               min="0" max="100">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            `;
+            percentuaisCampos.appendChild(div);
+        });
+        
+        // Adiciona event listeners aos inputs de percentual
+        document.querySelectorAll('.percentual-input').forEach(input => {
+            input.addEventListener('input', calcularTotalPercentual);
+        });
+        
+        calcularTotalPercentual();
+    }
+
+    function calcularTotalPercentual() {
+        const inputs = document.querySelectorAll('.percentual-input');
+        let total = 0;
+        
+        inputs.forEach(input => {
+            total += parseInt(input.value) || 0;
+        });
+        
+        totalPercentualSpan.textContent = total;
+        
+        if (total === 100) {
+            avisoPercentual.style.display = 'none';
+            totalPercentualSpan.className = 'text-success fw-bold';
+        } else {
+            avisoPercentual.style.display = 'block';
+            totalPercentualSpan.className = 'text-danger fw-bold';
+        }
+        
+        validarFormulario();
+    }
+
+    function validarFormulario() {
+        const data = document.getElementById('data').value;
+        const descricao = document.getElementById('descricao').value.trim();
+        const valor = document.getElementById('valor').value;
+        const pessoasSelecionadas = document.querySelectorAll('.pessoa-checkbox:checked');
+        const total = parseInt(totalPercentualSpan.textContent) || 0;
+        
+        const valido = data && descricao && valor && pessoasSelecionadas.length > 0 && total === 100;
+        
+        salvarBtn.disabled = !valido;
+        
+        if (valido) {
+            salvarBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Salvar Despesa';
+            salvarBtn.classList.remove('btn-secondary');
+            salvarBtn.classList.add('btn-primary');
+        } else {
+            salvarBtn.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Preencha todos os campos';
+            salvarBtn.classList.remove('btn-primary');
+            salvarBtn.classList.add('btn-secondary');
+        }
+    }
+
+    // Event listeners para validação
+    document.getElementById('data').addEventListener('change', validarFormulario);
+    document.getElementById('descricao').addEventListener('input', validarFormulario);
+    document.getElementById('valor').addEventListener('input', validarFormulario);
+
+    // Submissão do formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const dados = {
+            data: document.getElementById('data').value,
+            descricao: document.getElementById('descricao').value.trim(),
+            valor: parseFloat(document.getElementById('valor').value),
+            categoria: document.getElementById('categoria').value.trim(),
+            observacoes: document.getElementById('observacoes').value.trim(),
+            comentarios: document.getElementById('comentarios').value.trim(),
+            donos: {}
+        };
+
+        // Coletar percentuais
+        document.querySelectorAll('.percentual-input').forEach(input => {
+            const pessoa = input.dataset.pessoa;
+            const percentual = parseInt(input.value);
+            dados.donos[pessoa] = percentual;
+        });
+
+        // Adicionar categoria às observações se preenchida
+        if (dados.categoria) {
+            dados.observacoes = dados.observacoes ? 
+                `Categoria: ${dados.categoria} | ${dados.observacoes}` : 
+                `Categoria: ${dados.categoria}`;
+        }
+
+        // Desabilitar botão
+        salvarBtn.disabled = true;
+        salvarBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+        
+        Notiflix.Loading.circle('Salvando despesa...');
+        
+        fetch('/salvar_nova_despesa', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dados)
+        })
+        .then(response => response.json())
+        .then(data => {
+            Notiflix.Loading.remove();
+            
+            if (data.success) {
+                Notiflix.Notify.success(data.message);
+                setTimeout(() => {
+                    window.location.href = '/resumo';
+                }, 1500);
+            } else {
+                Notiflix.Notify.failure(data.message);
+                validarFormulario();
+            }
+        })
+        .catch(error => {
+            Notiflix.Loading.remove();
+            Notiflix.Notify.failure('Erro ao salvar despesa: ' + error.message);
+            validarFormulario();
+        });
+    });
+});
+</script>
+{% endblock %}

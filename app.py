@@ -580,6 +580,123 @@ def excluir_pendente():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Erro ao excluir transação: {str(e)}'})
 
+@app.route('/nova_despesa')
+def nova_despesa():
+    """
+    Exibe formulário para adicionar nova despesa manualmente
+    """
+    try:
+        import json
+        
+        # Carrega revisões para obter lista de pessoas
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Obter lista de pessoas únicas das revisões existentes
+        pessoas_existentes = set()
+        for revisao in revisoes:
+            donos = revisao.get('donos', {})
+            pessoas_existentes.update(donos.keys())
+        pessoas_existentes = sorted(list(pessoas_existentes))
+        
+        return render_template('nova_despesa.html', pessoas_existentes=pessoas_existentes)
+        
+    except Exception as e:
+        return f"Erro ao carregar formulário: {str(e)}", 500
+
+@app.route('/salvar_nova_despesa', methods=['POST'])
+def salvar_nova_despesa():
+    """
+    Salva nova despesa manual diretamente nas revisões
+    """
+    try:
+        import json
+        from datetime import datetime
+        from utils.hash import gerar_hash_transacao
+        
+        dados = request.get_json()
+        
+        # Validações básicas
+        if not dados:
+            return jsonify({'success': False, 'message': 'Dados não recebidos'})
+        
+        # Campos obrigatórios
+        campos_obrigatorios = ['data', 'descricao', 'valor', 'donos']
+        for campo in campos_obrigatorios:
+            if not dados.get(campo):
+                return jsonify({'success': False, 'message': f'Campo {campo} é obrigatório'})
+        
+        # Validar percentuais
+        total_percentual = sum(dados.get('donos', {}).values())
+        if total_percentual != 100:
+            return jsonify({'success': False, 'message': 'O total dos percentuais deve ser 100%'})
+        
+        # Converter valor para float
+        try:
+            valor = float(dados['valor'])
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Valor deve ser um número válido'})
+        
+        # Gerar hash único para a transação
+        hash_transacao = gerar_hash_transacao(dados['data'], dados['descricao'], valor, 'manual')
+        
+        # Criar transação
+        timestamp = int(datetime.now().timestamp())
+        transacao = {
+            'id': f"manual_{timestamp}",
+            'tipo': 'manual',
+            'data': dados['data'],
+            'descricao': dados['descricao'],
+            'valor': valor,
+            'tipo_movimento': 'entrada' if valor < 0 else 'saida',
+            'fonte': 'Manual',
+            'hash': hash_transacao,
+            'observacoes': dados.get('observacoes', '')
+        }
+        
+        # Criar revisão
+        revisao = {
+            'hash': hash_transacao,
+            'id_original': transacao['id'],
+            'nova_descricao': dados['descricao'],
+            'donos': dados['donos'],
+            'comentarios': dados.get('comentarios', ''),
+            'data_revisao': datetime.now().isoformat(),
+            'revisado_por': 'Manual'
+        }
+        
+        # Carregar e salvar transações
+        try:
+            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
+                transacoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            transacoes = []
+        
+        transacoes.append(transacao)
+        
+        with open('data/transacoes.json', 'w', encoding='utf-8') as f:
+            json.dump(transacoes, f, ensure_ascii=False, indent=2)
+        
+        # Carregar e salvar revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        revisoes.append(revisao)
+        
+        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
+            json.dump(revisoes, f, ensure_ascii=False, indent=2)
+        
+        return jsonify({'success': True, 'message': 'Despesa manual adicionada com sucesso!'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro ao salvar despesa: {str(e)}'})
+
 @app.route('/listagens')
 def listagens():
     """
