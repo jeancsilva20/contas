@@ -1878,4 +1878,4 @@ def quitar_em_lote():
 if __name__ == '__main__':
     # Limpa arquivos temporários antigos na inicialização
     cleanup_temp_files()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
