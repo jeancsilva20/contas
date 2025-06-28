@@ -1303,7 +1303,7 @@ def atualizar_status_pagamento():
         return jsonify({'success': True, 'message': message})
         
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao atualizar status: {str(e)}'}))
+        return jsonify({'success': False, 'message': f'Erro ao atualizar status: {str(e)}'})
 
 @app.route('/quitar_em_lote', methods=['POST'])
 def quitar_em_lote():
