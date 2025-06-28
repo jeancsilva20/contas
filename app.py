@@ -510,6 +510,8 @@ def salvar_revisao():
             'nova_descricao': dados['nova_descricao'],
             'donos': dados['donos'],
             'comentarios': dados['comentarios'],
+            'pago_por': dados.get('pago_por', ''),
+            'quitado': False,  # Por padrão, todas as contas começam não quitadas
             'data_revisao': datetime.now().isoformat(),
             'revisado_por': 'Usuario'  # Pode ser expandido para incluir autenticação
         }
@@ -664,6 +666,8 @@ def salvar_nova_despesa():
             'nova_descricao': dados['descricao'],
             'donos': dados['donos'],
             'comentarios': dados.get('comentarios', ''),
+            'pago_por': dados.get('pago_por', ''),
+            'quitado': False,
             'data_revisao': datetime.now().isoformat(),
             'revisado_por': 'Manual'
         }
@@ -769,7 +773,9 @@ def listagens():
                     'percentual_rateio': percentual,
                     'valor_rateado': valor_rateado,
                     'responsavel': pessoa,
-                    'tipo_movimento': transacao.get('tipo_movimento', 'saida')
+                    'tipo_movimento': transacao.get('tipo_movimento', 'saida'),
+                    'pago_por': revisao.get('pago_por', ''),
+                    'quitado': revisao.get('quitado', False)
                 }
                 
                 listagem_dados.append(item)
@@ -866,7 +872,9 @@ def exportar_listagem_csv():
                     'Valor Total': f"R$ {valor_total:.2f}",
                     '% Rateio': f"{percentual}%",
                     'Valor Rateado': f"R$ {valor_rateado:.2f}",
-                    'Responsável': pessoa
+                    'Responsável': pessoa,
+                    'Pago Por': revisao.get('pago_por', ''),
+                    'Status': 'Quitado' if revisao.get('quitado', False) else 'Pendente'
                 })
         
         # Ordena por data
@@ -875,7 +883,7 @@ def exportar_listagem_csv():
         # Cria arquivo CSV em memória
         output = io.StringIO()
         if dados_csv:
-            fieldnames = ['Data', 'Descrição', 'Valor', 'Fonte', 'Observações', 'Valor Total', '% Rateio', 'Valor Rateado', 'Responsável']
+            fieldnames = ['Data', 'Descrição', 'Valor', 'Fonte', 'Observações', 'Valor Total', '% Rateio', 'Valor Rateado', 'Responsável', 'Pago Por', 'Status']
             writer = csv.DictWriter(output, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(dados_csv)
@@ -1003,6 +1011,241 @@ def exportar_rateio_csv():
         
     except Exception as e:
         return f"Erro ao exportar CSV: {str(e)}", 500
+
+@app.route('/pagamentos')
+def pagamentos():
+    """
+    Exibe controle de pagamentos
+    """
+    try:
+        import json
+        from collections import defaultdict
+        from datetime import datetime
+        
+        # Obtém filtros da query string
+        data_inicio = request.args.get('data_inicio', '')
+        data_fim = request.args.get('data_fim', '')
+        status = request.args.get('status', '')
+        pago_por = request.args.get('pago_por', '')
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            revisoes = []
+        
+        # Carrega transações
+        try:
+            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
+                transacoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            transacoes = []
+        
+        # Cria mapa de transações por hash
+        transacoes_map = {t['hash']: t for t in transacoes}
+        
+        # Lista para armazenar dados de pagamentos
+        pagamentos_dados = []
+        pessoas_uniques = set()
+        total_pendentes = 0
+        total_valor_pendente = 0
+        
+        # Processa cada revisão
+        for revisao in revisoes:
+            transacao = transacoes_map.get(revisao['hash'])
+            if not transacao:
+                continue
+            
+            # Aplica filtro de data
+            data_str = transacao['data']
+            if data_inicio and data_str < data_inicio:
+                continue
+            if data_fim and data_str > data_fim:
+                continue
+            
+            # Valor total da transação
+            valor_total = abs(transacao['valor'])
+            if transacao.get('tipo_movimento') == 'entrada':
+                valor_total = -valor_total
+            
+            # Obtém dados de pagamento
+            pago_por_revisao = revisao.get('pago_por', '')
+            quitado = revisao.get('quitado', False)
+            
+            # Aplica filtro de status
+            if status == 'pendente' and quitado:
+                continue
+            if status == 'quitado' and not quitado:
+                continue
+            
+            # Aplica filtro de pago_por
+            if pago_por and pago_por_revisao != pago_por:
+                continue
+            
+            # Adiciona pessoas à lista
+            pessoas_uniques.add(pago_por_revisao)
+            
+            # Distribui por responsável
+            donos = revisao.get('donos', {})
+            for pessoa, percentual in donos.items():
+                valor_rateado = valor_total * (percentual / 100)
+                
+                item = {
+                    'hash': revisao['hash'],
+                    'data': data_str,
+                    'descricao': revisao.get('nova_descricao', transacao['descricao']),
+                    'valor_rateado': valor_rateado,
+                    'responsavel': pessoa,
+                    'pago_por': pago_por_revisao,
+                    'quitado': quitado,
+                    'tipo_movimento': transacao.get('tipo_movimento', 'saida')
+                }
+                
+                pagamentos_dados.append(item)
+                
+                # Conta pendentes
+                if not quitado:
+                    total_pendentes += 1
+                    total_valor_pendente += abs(valor_rateado)
+        
+        # Ordena por data
+        pagamentos_dados.sort(key=lambda x: x['data'], reverse=True)
+        
+        # Remove strings vazias do set de pessoas
+        pessoas_uniques.discard('')
+        pessoas_uniques = sorted(list(pessoas_uniques))
+        
+        # Calcula saldos entre pessoas
+        saldos_entre_pessoas = calcular_saldos_entre_pessoas(revisoes, transacoes_map)
+        
+        return render_template('pagamentos.html', 
+                             pagamentos_dados=pagamentos_dados,
+                             pessoas_uniques=pessoas_uniques,
+                             total_pendentes=total_pendentes,
+                             total_valor_pendente=total_valor_pendente,
+                             saldos_entre_pessoas=saldos_entre_pessoas,
+                             data_inicio=data_inicio,
+                             data_fim=data_fim,
+                             status=status,
+                             pago_por=pago_por)
+        
+    except Exception as e:
+        return f"Erro ao carregar pagamentos: {str(e)}", 500
+
+def calcular_saldos_entre_pessoas(revisoes, transacoes_map):
+    """
+    Calcula saldos entre pessoas baseado em quem pagou e quem deve
+    """
+    from collections import defaultdict
+    from itertools import combinations
+    
+    # Dicionário para armazenar saldos: {(pessoa1, pessoa2): saldo}
+    saldos_brutos = defaultdict(float)
+    pessoas = set()
+    
+    for revisao in revisoes:
+        if revisao.get('quitado', False):
+            continue  # Pula transações já quitadas
+            
+        transacao = transacoes_map.get(revisao['hash'])
+        if not transacao:
+            continue
+        
+        pago_por = revisao.get('pago_por', '')
+        if not pago_por:
+            continue
+        
+        valor_total = abs(transacao['valor'])
+        if transacao.get('tipo_movimento') == 'entrada':
+            valor_total = -valor_total
+        
+        donos = revisao.get('donos', {})
+        
+        # Para cada pessoa responsável, calcula quanto deve para quem pagou
+        for pessoa, percentual in donos.items():
+            if pessoa == pago_por:
+                continue  # Pessoa não deve para si mesma
+            
+            valor_devido = valor_total * (percentual / 100)
+            
+            # Cria chave ordenada para o par de pessoas
+            chave = tuple(sorted([pessoa, pago_por]))
+            
+            # Se pessoa < pago_por na ordem, valor é negativo (pessoa deve)
+            # Se pessoa > pago_por na ordem, valor é positivo (pago_por deve)
+            if pessoa < pago_por:
+                saldos_brutos[chave] -= valor_devido
+            else:
+                saldos_brutos[chave] += valor_devido
+            
+            pessoas.add(pessoa)
+            pessoas.add(pago_por)
+    
+    # Converte para lista de objetos para exibição
+    saldos_entre_pessoas = []
+    for (pessoa1, pessoa2), saldo in saldos_brutos.items():
+        if abs(saldo) > 0.01:  # Ignora valores muito pequenos
+            saldos_entre_pessoas.append({
+                'pessoa1': pessoa1,
+                'pessoa2': pessoa2,
+                'saldo': saldo
+            })
+    
+    # Ordena por valor absoluto do saldo (maiores dívidas primeiro)
+    saldos_entre_pessoas.sort(key=lambda x: abs(x['saldo']), reverse=True)
+    
+    return saldos_entre_pessoas
+
+@app.route('/atualizar_status_pagamento', methods=['POST'])
+def atualizar_status_pagamento():
+    """
+    Atualiza status de quitação de um pagamento específico
+    """
+    try:
+        import json
+        
+        dados = request.get_json()
+        
+        # Validações básicas
+        if not dados or not dados.get('hash') or not dados.get('responsavel'):
+            return jsonify({'success': False, 'message': 'Dados obrigatórios não informados'})
+        
+        hash_transacao = dados['hash']
+        responsavel = dados['responsavel']
+        quitado = dados.get('quitado', False)
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify({'success': False, 'message': 'Revisões não encontradas'})
+        
+        # Encontra a revisão correspondente
+        revisao_encontrada = None
+        for revisao in revisoes:
+            if revisao['hash'] == hash_transacao:
+                revisao_encontrada = revisao
+                break
+        
+        if not revisao_encontrada:
+            return jsonify({'success': False, 'message': 'Revisão não encontrada'})
+        
+        # Atualiza status de quitação
+        revisao_encontrada['quitado'] = quitado
+        
+        # Salva arquivo atualizado
+        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
+            json.dump(revisoes, f, ensure_ascii=False, indent=2)
+        
+        status_texto = 'quitado' if quitado else 'pendente'
+        message = f'Pagamento marcado como {status_texto} com sucesso!'
+        
+        return jsonify({'success': True, 'message': message})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro ao atualizar status: {str(e)}'})
 
 if __name__ == '__main__':
     # Limpa arquivos temporários antigos na inicialização

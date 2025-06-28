@@ -52,6 +52,12 @@
                                 <input type="text" class="form-control" id="categoria" name="categoria" placeholder="Categoria da despesa">
                             </div>
 
+                            <!-- Pago Por -->
+                            <div class="col-md-6 mb-3">
+                                <label for="pago-por" class="form-label">Pago Por</label>
+                                <input type="text" class="form-control" id="pago-por" name="pago-por" placeholder="Quem pagou esta conta">
+                            </div>
+
                             <!-- Observações -->
                             <div class="col-12 mb-3">
                                 <label for="observacoes" class="form-label">Observações</label>
@@ -297,6 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
             categoria: document.getElementById('categoria').value.trim(),
             observacoes: document.getElementById('observacoes').value.trim(),
             comentarios: document.getElementById('comentarios').value.trim(),
+            pago_por: document.getElementById('pago-por').value.trim(),
             donos: {}
         };
 
