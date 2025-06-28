@@ -1875,15 +1875,8 @@ def quitar_em_lote():
         })
 
 
-##if __name__ == '__main__':
-    # Limpa arquivos temporários antigos na inicialização
- #   cleanup_temp_files()
- #   app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
-
 if __name__ == '__main__':
-    # Somente execute o servidor Flask se **não** estiver sendo rodado via Streamlit
-    import sys
-    if not any('streamlit' in arg for arg in sys.argv):
-        cleanup_temp_files()
-        app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    # Limpa arquivos temporários antigos na inicialização
+    cleanup_temp_files()
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
 
