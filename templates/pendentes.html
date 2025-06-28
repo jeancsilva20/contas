@@ -211,6 +211,22 @@
                         </div>
                     </div>
 
+                     <!-- Pago Por -->
+                    <div class="mb-3">
+                        <label for="pago-por" class="form-label">
+                            <i class="bi bi-person me-1"></i>
+                            Pago Por:
+                        </label>
+                        <select class="form-select" id="pago-por" required>
+                            <option value="" disabled selected>Selecione quem pagou</option>
+                            <option value="Jean">Jean</option>
+                            <option value="João Rafael">João Rafael</option>
+                            <option value="Juliano">Juliano</option>
+                            <option value="Tati">Tati</option>
+                             <option value="João Batista">João Batista</option>
+                        </select>
+                    </div>
+
                     <!-- Comentários -->
                     <div class="mb-3">
                         <label for="comentarios" class="form-label">
@@ -284,6 +300,8 @@ $(document).ready(function() {
         $('#modal-fonte').text(fonte);
         $('#nova-descricao').val(descricao);
         $('#comentarios').val('');
+         $('#pago-por').val('');
+
 
         // Limpar checkboxes e percentuais
         $('.pessoa-checkbox').prop('checked', false);
@@ -396,6 +414,11 @@ $(document).ready(function() {
             return false;
         }
 
+         if (!$('#pago-por').val()) {
+            Notiflix.Notify.failure('Por favor, selecione quem pagou');
+            return false;
+        }
+
         // Validar percentuais
         let totalPercentual = 0;
         $('.percentual-input').each(function() {
@@ -416,7 +439,8 @@ $(document).ready(function() {
             id: $('#transacao-id').val(),
             nova_descricao: $('#nova-descricao').val().trim(),
             comentarios: $('#comentarios').val().trim(),
-            donos: {}
+            donos: {},
+            pago_por: $('#pago-por').val()
         };
 
         // Coletar percentuais

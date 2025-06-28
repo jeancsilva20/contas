@@ -1,0 +1,503 @@
+
+{% extends "base.html" %}
+
+{% block title %}Pagamentos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-credit-card me-2"></i>
+                    Controle de Pagamentos
+                </h5>
+                <span class="badge bg-info text-dark fs-6">{{ total_pendentes }} pendentes</span>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="card-body border-bottom">
+                <form method="GET" action="/pagamentos" class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label for="data_inicio" class="form-label">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            Data Início
+                        </label>
+                        <input type="date" class="form-control form-control-sm" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="data_fim" class="form-label">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            Data Fim
+                        </label>
+                        <input type="date" class="form-control form-control-sm" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Status
+                        </label>
+                        <select class="form-select form-select-sm" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="pendente" {% if status == 'pendente' %}selected{% endif %}>Pendente</option>
+                            <option value="quitado" {% if status == 'quitado' %}selected{% endif %}>Quitado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="pago_por" class="form-label">
+                            <i class="bi bi-person me-1"></i>
+                            Pago Por
+                        </label>
+                        <select class="form-select form-select-sm" id="pago_por" name="pago_por">
+                            <option value="">Todos</option>
+                            {% for pessoa in pessoas_uniques %}
+                                <option value="{{ pessoa }}" {% if pessoa == pago_por %}selected{% endif %}>{{ pessoa }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="responsavel" class="form-label">
+                            <i class="bi bi-person-badge me-1"></i>
+                            Responsável
+                        </label>
+                        <div class="d-flex gap-3">
+                            <select class="form-select form-select-sm form-control" id="responsavel" name="responsavel">
+                                <option value="">Todos</option>
+                                {% for pessoa in responsaveis_unicos %}
+                                    <option value="{{ pessoa }}" {% if pessoa == responsavel %}selected{% endif %}>{{ pessoa }}</option>
+                                {% endfor %}
+                            </select>
+
+                        </div>
+                    </div>
+                     <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm form-control">
+                        <i class="bi bi-search me-1"></i>Pesquisar
+                    </button>
+                     </div>
+                </form>
+            </div>
+            
+            <div class="card-body">
+                {% if pagamentos_dados %}
+                    <!-- Controles de seleção em lote -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="selecionarTodos">
+                                    <i class="bi bi-check-square me-1"></i>
+                                    Selecionar Tudo
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="deselecionarTodos">
+                                    <i class="bi bi-square me-1"></i>
+                                    Desmarcar Tudo
+                                </button>
+                                <span class="text-muted ms-2" id="contadorSelecionados">0 selecionados</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-success btn-sm" id="quitarLote" disabled>
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Quitar em Lote
+                                </button>
+                                <button type="button" class="btn btn-warning btn-sm" id="reverterLote" disabled>
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Reverter em Lote
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table id="pagamentos-tabela" class="table table-striped table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" class="form-check-input" id="selecionarTodosHeader">
+                                    </th>
+                                    <th><i class="bi bi-calendar3 me-1"></i>Data</th>
+                                    <th><i class="bi bi-card-text me-1"></i>Descrição</th>
+                                    <th><i class="bi bi-currency-dollar me-1"></i>Valor Rateado</th>
+                                    <th><i class="bi bi-person me-1"></i>Responsável</th>
+                                    <th><i class="bi bi-credit-card me-1"></i>Pago Por</th>
+                                    <th><i class="bi bi-check-circle me-1"></i>Status</th>
+                                    <th><i class="bi bi-gear me-1"></i>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in pagamentos_dados %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input item-checkbox" 
+                                               data-hash="{{ item.hash }}" 
+                                               data-responsavel="{{ item.responsavel }}">
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ item.data }}</span>
+                                    </td>
+                                    <td>
+                                        {{ item.descricao }}
+                                        {% if item.tipo_movimento == 'entrada' %}
+                                            <span class="badge bg-success ms-2">Entrada</span>
+                                        {% else %}
+                                            <span class="badge bg-danger ms-2">Saída</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="{% if item.valor_rateado < 0 %}valor-entrada{% else %}valor-saida{% endif %}">
+                                            {% if item.valor_rateado < 0 %}
+                                                -R$ {{ "%.2f"|format(item.valor_rateado|abs) }}
+                                            {% else %}
+                                                R$ {{ "%.2f"|format(item.valor_rateado) }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ item.responsavel }}</span>
+                                    </td>
+                                    <td>
+                                        {% if item.pago_por %}
+                                            <span class="badge bg-success">{{ item.pago_por }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.quitado %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Quitado
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-clock me-1"></i>Pendente
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if not item.quitado %}
+                                            <button class="btn btn-sm btn-success" onclick="marcarQuitado('{{ item.hash }}', '{{ item.responsavel }}')">
+                                                <i class="bi bi-check-circle me-1"></i>Quitar
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-warning" onclick="marcarPendente('{{ item.hash }}', '{{ item.responsavel }}')">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Reverter
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-credit-card text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="mt-3 text-muted">Nenhum pagamento encontrado</h4>
+                        <p class="text-muted mb-4">Use os filtros acima para pesquisar ou verifique se há dados revisados.</p>
+                        <a href="/pendentes" class="btn btn-primary">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Ver Pendentes
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Voltar
+                </a>
+                <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Total pendente: R$ {{ "%.2f"|format(total_valor_pendente) }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo de Saldos -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calculator me-2"></i>
+                    Resumo de Saldos Entre Pessoas
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if saldos_entre_pessoas %}
+                    <div class="row">
+                        {% for saldo in saldos_entre_pessoas %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-{% if saldo.saldo > 0 %}success{% elif saldo.saldo < 0 %}danger{% else %}secondary{% endif %}">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">{{ saldo.pessoa1 }} ↔ {{ saldo.pessoa2 }}</h6>
+                                    {% if saldo.saldo > 0 %}
+                                        <p class="card-text text-success">
+                                            <strong>{{ saldo.pessoa2 }} deve R$ {{ "%.2f"|format(saldo.saldo) }} para {{ saldo.pessoa1 }}</strong>
+                                        </p>
+                                    {% elif saldo.saldo < 0 %}
+                                        <p class="card-text text-danger">
+                                            <strong>{{ saldo.pessoa1 }} deve R$ {{ "%.2f"|format(saldo.saldo|abs) }} para {{ saldo.pessoa2 }}</strong>
+                                        </p>
+                                    {% else %}
+                                        <p class="card-text text-muted">
+                                            <strong>Contas em dia</strong>
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted">Nenhum saldo calculado ainda.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar DataTables
+    var table = $('#pagamentos-tabela').DataTable({
+        responsive: true,
+        paging: true,
+        searching: true,
+        ordering: true,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+        order: [[1, 'desc']], // Ordenar por data (ajustado para nova coluna)
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
+        },
+        columnDefs: [
+            {
+                targets: [0], // Coluna de seleção
+                orderable: false,
+                searchable: false
+            },
+            {
+                targets: [3], // Coluna de valor (ajustado para nova coluna)
+                className: 'text-end'
+            },
+            {
+                targets: 1, // Coluna Data (ajustado para nova coluna)
+                type: 'date'
+            }
+        ]
+    });
+    
+    // Controles de seleção
+    function atualizarContador() {
+        var selecionados = $('.item-checkbox:checked').length;
+        $('#contadorSelecionados').text(selecionados + ' selecionados');
+        
+        // Habilita/desabilita botões de ação em lote
+        $('#quitarLote, #reverterLote').prop('disabled', selecionados === 0);
+    }
+    
+    // Selecionar todos os itens visíveis
+    $('#selecionarTodos, #selecionarTodosHeader').on('click', function() {
+        var checkboxes = table.$('.item-checkbox', {"page": "current"});
+        checkboxes.prop('checked', true);
+        atualizarContador();
+    });
+    
+    // Desmarcar todos
+    $('#deselecionarTodos').on('click', function() {
+        $('.item-checkbox').prop('checked', false);
+        $('#selecionarTodosHeader').prop('checked', false);
+        atualizarContador();
+    });
+    
+    // Atualizar contador quando checkbox individual é alterado
+    $(document).on('change', '.item-checkbox', function() {
+        atualizarContador();
+        
+        // Atualizar checkbox do header
+        var totalVisivel = table.$('.item-checkbox', {"page": "current"}).length;
+        var selecionadosVisivel = table.$('.item-checkbox:checked', {"page": "current"}).length;
+        $('#selecionarTodosHeader').prop('checked', totalVisivel > 0 && totalVisivel === selecionadosVisivel);
+    });
+    
+    // Atualizar contador e checkboxes ao mudar de página
+    table.on('draw', function() {
+        atualizarContador();
+        $('#selecionarTodosHeader').prop('checked', false);
+    });
+    
+    // Quitação em lote
+    $('#quitarLote').on('click', function() {
+        var itens = [];
+        $('.item-checkbox:checked').each(function() {
+            itens.push({
+                hash: $(this).data('hash'),
+                responsavel: $(this).data('responsavel')
+            });
+        });
+        
+        if (itens.length === 0) {
+            Notiflix.Notify.warning('Selecione pelo menos um item');
+            return;
+        }
+        
+        Notiflix.Confirm.show(
+            'Confirmar Quitação em Lote',
+            `Marcar ${itens.length} pagamentos como quitados?`,
+            'Sim, Quitar',
+            'Cancelar',
+            function() {
+                processarLote(itens, true);
+            }
+        );
+    });
+    
+    // Reversão em lote
+    $('#reverterLote').on('click', function() {
+        var itens = [];
+        $('.item-checkbox:checked').each(function() {
+            itens.push({
+                hash: $(this).data('hash'),
+                responsavel: $(this).data('responsavel')
+            });
+        });
+        
+        if (itens.length === 0) {
+            Notiflix.Notify.warning('Selecione pelo menos um item');
+            return;
+        }
+        
+        Notiflix.Confirm.show(
+            'Confirmar Reversão em Lote',
+            `Marcar ${itens.length} pagamentos como pendentes?`,
+            'Sim, Reverter',
+            'Cancelar',
+            function() {
+                processarLote(itens, false);
+            }
+        );
+    });
+    
+    function processarLote(itens, quitado) {
+        Notiflix.Loading.circle('Processando...');
+        
+        fetch('/quitar_em_lote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                itens: itens,
+                quitado: quitado
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            Notiflix.Loading.remove();
+            
+            if (data.success) {
+                Notiflix.Notify.success(data.message);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                Notiflix.Notify.failure(data.message || 'Erro ao processar lote');
+            }
+        })
+        .catch(error => {
+            Notiflix.Loading.remove();
+            Notiflix.Notify.failure('Erro ao processar lote: ' + error.message);
+        });
+    }
+    
+    // Inicializar contador
+    atualizarContador();
+});
+
+function marcarQuitado(hash, responsavel) {
+    Notiflix.Confirm.show(
+        'Confirmar Quitação',
+        `Marcar como quitado o pagamento para ${responsavel}?`,
+        'Sim, Quitar',
+        'Cancelar',
+        function() {
+            atualizarStatusPagamento(hash, responsavel, true);
+        }
+    );
+}
+
+function marcarPendente(hash, responsavel) {
+    Notiflix.Confirm.show(
+        'Confirmar Reversão',
+        `Marcar como pendente o pagamento para ${responsavel}?`,
+        'Sim, Reverter',
+        'Cancelar',
+        function() {
+            atualizarStatusPagamento(hash, responsavel, false);
+        }
+    );
+}
+
+function atualizarStatusPagamento(hash, responsavel, quitado) {
+    Notiflix.Loading.circle('Atualizando status...');
+
+    fetch('/atualizar_status_pagamento', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            hash: hash,
+            responsavel: responsavel,
+            quitado: quitado
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        Notiflix.Loading.remove();
+
+        if (data.success) {
+            Notiflix.Notify.success(data.message);
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            Notiflix.Notify.failure(data.message || 'Erro ao atualizar status');
+        }
+    })
+    .catch(error => {
+        Notiflix.Loading.remove();
+        Notiflix.Notify.failure('Erro ao atualizar status: ' + error.message);
+    });
+}
+</script>
+{% endblock %}
+
+<style>
+    .valor-entrada {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+    .valor-saida {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    .table tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+</style>
