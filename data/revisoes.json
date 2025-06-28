@@ -12,13 +12,13 @@
     },
     "comentarios": "",
     "pago_por": "Jean",
-    "quitado": true,
+    "quitado": false,
     "quitacao_individual": {
-      "Jean": true,
-      "João Rafael": true,
-      "Juliano": true,
-      "Tati": true,
-      "João Batista": true
+      "Jean": false,
+      "João Rafael": false,
+      "Juliano": false,
+      "Tati": false,
+      "João Batista": false
     },
     "data_revisao": "2025-06-28T00:13:17.250045",
     "revisado_por": "Usuario"
@@ -36,13 +36,13 @@
     },
     "comentarios": "",
     "pago_por": "Jean",
-    "quitado": true,
+    "quitado": false,
     "quitacao_individual": {
-      "Jean": true,
-      "João Rafael": true,
-      "Juliano": true,
-      "Tati": true,
-      "João Batista": true
+      "Jean": false,
+      "João Rafael": false,
+      "Juliano": false,
+      "Tati": false,
+      "João Batista": false
     },
     "data_revisao": "2025-06-28T00:13:30.518915",
     "revisado_por": "Usuario"
@@ -60,13 +60,13 @@
     },
     "comentarios": "",
     "pago_por": "Jean",
-    "quitado": true,
+    "quitado": false,
     "quitacao_individual": {
-      "Jean": true,
-      "João Rafael": true,
-      "Juliano": true,
-      "Tati": true,
-      "João Batista": true
+      "Jean": false,
+      "João Rafael": false,
+      "Juliano": false,
+      "Tati": false,
+      "João Batista": false
     },
     "data_revisao": "2025-06-28T00:13:46.161405",
     "revisado_por": "Usuario"

@@ -2,6 +2,7 @@ import os
 import atexit
 import glob
 
+
 def cleanup_temp_files():
     """Limpa arquivos temporários antigos na inicialização e encerramento"""
     try:
@@ -15,9 +16,9 @@ def cleanup_temp_files():
     except:
         pass
 
+
 # Registra função de limpeza para ser executada ao encerrar a aplicação
 atexit.register(cleanup_temp_files)
-
 
 from flask import Flask, render_template, request, jsonify, session, redirect
 import os
@@ -25,13 +26,16 @@ import os
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_aqui_123456789'  # Necessário para sessões
 
+
 @app.route('/')
 def index():
-    return redirect('/resumo')
+    return redirect('/pagamentos')
+
 
 @app.route('/upload')
 def upload():
     return render_template('upload.html')
+
 
 @app.route('/get_fontes')
 def get_fontes():
@@ -59,6 +63,7 @@ def get_fontes():
     except Exception as e:
         return jsonify({'error': f'Erro ao carregar fontes: {str(e)}'}), 500
 
+
 @app.route('/pendentes')
 def pendentes():
     """
@@ -82,6 +87,7 @@ def pendentes():
     except Exception as e:
         return f"Erro ao carregar pendentes: {str(e)}", 500
 
+
 @app.route('/process_upload', methods=['POST'])
 def process_upload():
     try:
@@ -90,13 +96,22 @@ def process_upload():
 
         # Validações básicas
         if not file:
-            return jsonify({'success': False, 'message': 'Arquivo é obrigatório'})
+            return jsonify({
+                'success': False,
+                'message': 'Arquivo é obrigatório'
+            })
 
         if not fonte:
-            return jsonify({'success': False, 'message': 'Fonte é obrigatória'})
+            return jsonify({
+                'success': False,
+                'message': 'Fonte é obrigatória'
+            })
 
         if not file.filename.lower().endswith('.csv'):
-            return jsonify({'success': False, 'message': 'Apenas arquivos CSV são suportados'})
+            return jsonify({
+                'success': False,
+                'message': 'Apenas arquivos CSV são suportados'
+            })
 
         # Importa o serviço de importação
         from services.importador import ImportadorTransacoes
@@ -128,7 +143,7 @@ def process_upload():
 
         # Sempre redireciona para a tela de mapeamento, independente do conteúdo
         return jsonify({
-            'success': False, 
+            'success': False,
             'requires_mapping': True,
             'message': 'Redirecionando para mapeamento de colunas.',
             'redirect_url': '/mapear_colunas'
@@ -139,7 +154,11 @@ def process_upload():
         return jsonify({'success': False, 'message': str(e)})
     except Exception as e:
         # Outros erros
-        return jsonify({'success': False, 'message': f'Erro ao processar arquivo: {str(e)}'})
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao processar arquivo: {str(e)}'
+        })
+
 
 @app.route('/resumo')
 def resumo():
@@ -236,7 +255,8 @@ def resumo():
                 categoria = 'Outros'
                 if 'Categoria:' in observacoes:
                     try:
-                        categoria = observacoes.split('Categoria:')[1].split('|')[0].strip()
+                        categoria = observacoes.split('Categoria:')[1].split(
+                            '|')[0].strip()
                     except:
                         pass
                 por_categoria[categoria] += valor_pessoa_filtrada
@@ -262,18 +282,30 @@ def resumo():
                 categoria = 'Outros'
                 if 'Categoria:' in observacoes:
                     try:
-                        categoria = observacoes.split('Categoria:')[1].split('|')[0].strip()
+                        categoria = observacoes.split('Categoria:')[1].split(
+                            '|')[0].strip()
                     except:
                         pass
                 por_categoria[categoria] += valor
 
         # Ordena dados para gráficos
         meses_ordenados = sorted(por_mes.keys())
-        dados_mensais = [{'mes': mes, 'valor': por_mes[mes]} for mes in meses_ordenados]
+        dados_mensais = [{
+            'mes': mes,
+            'valor': por_mes[mes]
+        } for mes in meses_ordenados]
 
-        dados_categoria = [{'categoria': cat, 'valor': valor} for cat, valor in sorted(por_categoria.items(), key=lambda x: x[1], reverse=True)]
+        dados_categoria = [{
+            'categoria': cat,
+            'valor': valor
+        } for cat, valor in sorted(
+            por_categoria.items(), key=lambda x: x[1], reverse=True)]
 
-        dados_pessoa = [{'pessoa': pessoa, 'valor': valor} for pessoa, valor in sorted(por_pessoa.items(), key=lambda x: x[1], reverse=True)]
+        dados_pessoa = [{
+            'pessoa': pessoa,
+            'valor': valor
+        } for pessoa, valor in sorted(
+            por_pessoa.items(), key=lambda x: x[1], reverse=True)]
 
         # Obter lista de responsáveis únicos para o filtro
         responsaveis_unicos = set()
@@ -287,24 +319,25 @@ def resumo():
         responsaveis_unicos = sorted(list(responsaveis_unicos))
         pessoas_pagaram = sorted(list(pessoas_pagaram))
 
-        return render_template('resumo.html', 
-                             total_geral=total_geral,
-                             dados_categoria=dados_categoria,
-                             dados_mensais=dados_mensais,
-                             dados_pessoa=dados_pessoa,
-                             total_revisoes=len(revisoes),
-                             responsaveis_unicos=responsaveis_unicos,
-                             data_inicio=data_inicio,
-                             data_fim=data_fim,
-                             responsavel=responsavel,
-                             pessoas_pagaram=pessoas_pagaram,
-                             valor_minimo=valor_minimo,
-                             valor_maximo=valor_maximo,
-                             pago_por=pago_por,
-                             status_transacao=status_transacao)
+        return render_template('resumo.html',
+                               total_geral=total_geral,
+                               dados_categoria=dados_categoria,
+                               dados_mensais=dados_mensais,
+                               dados_pessoa=dados_pessoa,
+                               total_revisoes=len(revisoes),
+                               responsaveis_unicos=responsaveis_unicos,
+                               data_inicio=data_inicio,
+                               data_fim=data_fim,
+                               responsavel=responsavel,
+                               pessoas_pagaram=pessoas_pagaram,
+                               valor_minimo=valor_minimo,
+                               valor_maximo=valor_maximo,
+                               pago_por=pago_por,
+                               status_transacao=status_transacao)
 
     except Exception as e:
         return f"Erro ao carregar resumo: {str(e)}", 500
+
 
 @app.route('/rateio')
 def rateio():
@@ -370,24 +403,26 @@ def rateio():
                 rateio_pessoa[pessoa] += valor_pessoa
 
         # Ordena por valor (maior para menor)
-        dados_rateio = [
-            {
-                'pessoa': pessoa, 
-                'valor': valor,
-                'percentual_total': (valor / total_geral * 100) if total_geral > 0 else 0
-            } 
-            for pessoa, valor in sorted(rateio_pessoa.items(), key=lambda x: x[1], reverse=True)
-        ]
+        dados_rateio = [{
+            'pessoa':
+            pessoa,
+            'valor':
+            valor,
+            'percentual_total':
+            (valor / total_geral * 100) if total_geral > 0 else 0
+        } for pessoa, valor in sorted(
+            rateio_pessoa.items(), key=lambda x: x[1], reverse=True)]
 
-        return render_template('rateio.html', 
-                             dados_rateio=dados_rateio,
-                             total_geral=total_geral,
-                             total_transacoes=total_transacoes,
-                             data_inicio=data_inicio,
-                             data_fim=data_fim)
+        return render_template('rateio.html',
+                               dados_rateio=dados_rateio,
+                               total_geral=total_geral,
+                               total_transacoes=total_transacoes,
+                               data_inicio=data_inicio,
+                               data_fim=data_fim)
 
     except Exception as e:
         return f"Erro ao carregar rateio: {str(e)}", 500
+
 
 @app.route('/mapear_colunas')
 def mapear_colunas():
@@ -411,15 +446,17 @@ def mapear_colunas():
         importador = ImportadorTransacoes()
 
         with open(temp_file_path, 'rb') as temp_file:
-            colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(temp_file)
+            colunas_encontradas, colunas_validas, colunas_obrigatorias = importador.verificar_colunas(
+                temp_file)
 
-        return render_template('mapear_colunas.html', 
-                             colunas_encontradas=colunas_encontradas,
-                             colunas_obrigatorias=colunas_obrigatorias,
-                             file_name=file_name)
+        return render_template('mapear_colunas.html',
+                               colunas_encontradas=colunas_encontradas,
+                               colunas_obrigatorias=colunas_obrigatorias,
+                               file_name=file_name)
 
     except Exception as e:
         return f"Erro ao carregar mapeamento: {str(e)}", 500
+
 
 @app.route('/processar_mapeamento', methods=['POST'])
 def processar_mapeamento():
@@ -428,37 +465,43 @@ def processar_mapeamento():
     """
     try:
         if 'temp_file_id' not in session:
-            return jsonify({'success': False, 'message': 'Arquivo não encontrado na sessão'})
+            return jsonify({
+                'success': False,
+                'message': 'Arquivo não encontrado na sessão'
+            })
 
         # Recupera dados do formulário
         mapeamento = {}
         for key, value in request.form.items():
             if key.startswith('coluna_'):
                 coluna_obrigatoria = key.replace('coluna_', '')
-                mapeamento[coluna_obrigatoria] = value if value else "DEIXAR_EM_BRANCO"
+                mapeamento[
+                    coluna_obrigatoria] = value if value else "DEIXAR_EM_BRANCO"
 
         # Valida se todas as colunas obrigatórias foram mapeadas
         colunas_obrigatorias = [
-            'Data de compra', 
-            'Nome no cartão', 
-            'Final do Cartão', 
-            'Categoria', 
-            'Descrição', 
-            'Parcela', 
-            'Valor (em R$)',
-            'Valor Recebido (em R$)'
+            'Data de compra', 'Nome no cartão', 'Final do Cartão', 'Categoria',
+            'Descrição', 'Parcela', 'Valor (em R$)', 'Valor Recebido (em R$)'
         ]
 
         for coluna in colunas_obrigatorias:
             if coluna not in mapeamento:
-                return jsonify({'success': False, 'message': f'Coluna obrigatória "{coluna}" não foi mapeada'})
+                return jsonify({
+                    'success':
+                    False,
+                    'message':
+                    f'Coluna obrigatória "{coluna}" não foi mapeada'
+                })
 
         # Recupera o arquivo temporário
         temp_id = session.get('temp_file_id')
         temp_file_path = os.path.join('temp', f"{temp_id}.csv")
 
         if not os.path.exists(temp_file_path):
-            return jsonify({'success': False, 'message': 'Arquivo temporário não encontrado'})
+            return jsonify({
+                'success': False,
+                'message': 'Arquivo temporário não encontrado'
+            })
 
         # Importa e processa com mapeamento
         from services.importador import ImportadorTransacoes
@@ -467,7 +510,8 @@ def processar_mapeamento():
         fonte = session.get('temp_fonte', 'Não informado')
 
         with open(temp_file_path, 'rb') as temp_file:
-            transacoes = importador.processar_arquivo_com_mapeamento(temp_file, mapeamento, fonte)
+            transacoes = importador.processar_arquivo_com_mapeamento(
+                temp_file, mapeamento, fonte)
             importador.salvar_transacoes(transacoes)
 
         # Limpa arquivos temporários e sessão
@@ -489,10 +533,18 @@ def processar_mapeamento():
             message = 'Arquivo processado, mas nenhuma transação nova foi encontrada.'
 
         # Direciona para a tela de pendentes após processamento
-        return jsonify({'success': True, 'message': message, 'redirect_url': '/pendentes'})
+        return jsonify({
+            'success': True,
+            'message': message,
+            'redirect_url': '/pendentes'
+        })
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao processar mapeamento: {str(e)}'})
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao processar mapeamento: {str(e)}'
+        })
+
 
 @app.route('/salvar_revisao', methods=['POST'])
 def salvar_revisao():
@@ -512,7 +564,10 @@ def salvar_revisao():
         # Validar percentuais
         total_percentual = sum(dados.get('donos', {}).values())
         if total_percentual != 100:
-            return jsonify({'success': False, 'message': 'O total dos percentuais deve ser 100%'})
+            return jsonify({
+                'success': False,
+                'message': 'O total dos percentuais deve ser 100%'
+            })
 
         # Carrega revisões existentes
         try:
@@ -534,10 +589,12 @@ def salvar_revisao():
             'donos': dados['donos'],
             'comentarios': dados['comentarios'],
             'pago_por': dados.get('pago_por', ''),
-            'quitado': False,  # Por padrão, todas as contas começam não quitadas
+            'quitado':
+            False,  # Por padrão, todas as contas começam não quitadas
             'quitacao_individual': quitacao_individual,
             'data_revisao': datetime.now().isoformat(),
-            'revisado_por': 'Usuario'  # Pode ser expandido para incluir autenticação
+            'revisado_por':
+            'Usuario'  # Pode ser expandido para incluir autenticação
         }
 
         # Adiciona à lista de revisões
@@ -553,19 +610,31 @@ def salvar_revisao():
                 pendentes = json.load(f)
 
             # Filtra removendo a transação revisada
-            pendentes_atualizados = [p for p in pendentes if p.get('hash') != dados['hash']]
+            pendentes_atualizados = [
+                p for p in pendentes if p.get('hash') != dados['hash']
+            ]
 
             # Salva pendentes atualizados
             with open('data/pendentes.json', 'w', encoding='utf-8') as f:
-                json.dump(pendentes_atualizados, f, ensure_ascii=False, indent=2)
+                json.dump(pendentes_atualizados,
+                          f,
+                          ensure_ascii=False,
+                          indent=2)
 
         except (FileNotFoundError, json.JSONDecodeError):
             pass  # Se não conseguir carregar pendentes, continua
 
-        return jsonify({'success': True, 'message': 'Revisão salva com sucesso!'})
+        return jsonify({
+            'success': True,
+            'message': 'Revisão salva com sucesso!'
+        })
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao salvar revisão: {str(e)}'})
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao salvar revisão: {str(e)}'
+        })
+
 
 @app.route('/excluir_pendente', methods=['POST'])
 def excluir_pendente():
@@ -579,7 +648,10 @@ def excluir_pendente():
 
         # Validações básicas
         if not dados or not dados.get('hash'):
-            return jsonify({'success': False, 'message': 'Hash da transação é obrigatório'})
+            return jsonify({
+                'success': False,
+                'message': 'Hash da transação é obrigatório'
+            })
 
         hash_transacao = dados['hash']
 
@@ -588,23 +660,40 @@ def excluir_pendente():
             with open('data/pendentes.json', 'r', encoding='utf-8') as f:
                 pendentes = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            return jsonify({'success': False, 'message': 'Lista de pendentes não encontrada'})
+            return jsonify({
+                'success': False,
+                'message': 'Lista de pendentes não encontrada'
+            })
 
         # Filtra removendo a transação com o hash especificado
-        pendentes_filtrados = [p for p in pendentes if p.get('hash') != hash_transacao]
+        pendentes_filtrados = [
+            p for p in pendentes if p.get('hash') != hash_transacao
+        ]
 
         # Verifica se a transação foi encontrada
         if len(pendentes_filtrados) == len(pendentes):
-            return jsonify({'success': False, 'message': 'Transação não encontrada na lista de pendentes'})
+            return jsonify({
+                'success':
+                False,
+                'message':
+                'Transação não encontrada na lista de pendentes'
+            })
 
         # Salva a lista atualizada
         with open('data/pendentes.json', 'w', encoding='utf-8') as f:
             json.dump(pendentes_filtrados, f, ensure_ascii=False, indent=2)
 
-        return jsonify({'success': True, 'message': 'Transação removida com sucesso!'})
+        return jsonify({
+            'success': True,
+            'message': 'Transação removida com sucesso!'
+        })
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao excluir transação: {str(e)}'})
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao excluir transação: {str(e)}'
+        })
+
 
 @app.route('/nova_despesa')
 def nova_despesa():
@@ -628,10 +717,12 @@ def nova_despesa():
             pessoas_existentes.update(donos.keys())
         pessoas_existentes = sorted(list(pessoas_existentes))
 
-        return render_template('nova_despesa.html', pessoas_existentes=pessoas_existentes)
+        return render_template('nova_despesa.html',
+                               pessoas_existentes=pessoas_existentes)
 
     except Exception as e:
         return f"Erro ao carregar formulário: {str(e)}", 500
+
 
 @app.route('/salvar_nova_despesa', methods=['POST'])
 def salvar_nova_despesa():
@@ -647,27 +738,41 @@ def salvar_nova_despesa():
 
         # Validações básicas
         if not dados:
-            return jsonify({'success': False, 'message': 'Dados não recebidos'})
+            return jsonify({
+                'success': False,
+                'message': 'Dados não recebidos'
+            })
 
         # Campos obrigatórios
         campos_obrigatorios = ['data', 'descricao', 'valor', 'donos']
         for campo in campos_obrigatorios:
             if not dados.get(campo):
-                return jsonify({'success': False, 'message': f'Campo {campo} é obrigatório'})
+                return jsonify({
+                    'success': False,
+                    'message': f'Campo {campo} é obrigatório'
+                })
 
         # Validar percentuais
         total_percentual = sum(dados.get('donos', {}).values())
         if total_percentual != 100:
-            return jsonify({'success': False, 'message': 'O total dos percentuais deve ser 100%'})
+            return jsonify({
+                'success': False,
+                'message': 'O total dos percentuais deve ser 100%'
+            })
 
         # Converter valor para float
         try:
             valor = float(dados['valor'])
         except ValueError:
-            return jsonify({'success': False, 'message': 'Valor deve ser um número válido'})
+            return jsonify({
+                'success': False,
+                'message': 'Valor deve ser um número válido'
+            })
 
         # Gerar hash único para a transação
-        hash_transacao = gerar_hash_transacao(dados['data'], dados['descricao'], valor, 'manual')
+        hash_transacao = gerar_hash_transacao(dados['data'],
+                                              dados['descricao'], valor,
+                                              'manual')
 
         # Criar transação
         timestamp = int(datetime.now().timestamp())
@@ -726,10 +831,17 @@ def salvar_nova_despesa():
         with open('data/revisoes.json', 'w', encoding='utf-8') as f:
             json.dump(revisoes, f, ensure_ascii=False, indent=2)
 
-        return jsonify({'success': True, 'message': 'Despesa manual adicionada com sucesso!'})
+        return jsonify({
+            'success': True,
+            'message': 'Despesa manual adicionada com sucesso!'
+        })
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao salvar despesa: {str(e)}'})
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao salvar despesa: {str(e)}'
+        })
+
 
 @app.route('/listagens')
 def listagens():
@@ -798,24 +910,37 @@ def listagens():
                 status_individual = quitacao_individual.get(pessoa, False)
 
                 item = {
-                    'data': data_str,
-                    'descricao': revisao.get('nova_descricao', transacao['descricao']),
-                    'valor': transacao['valor'],
-                    'fonte': transacao.get('fonte', ''),
-                    'observacoes': transacao.get('observacoes', ''),
-                    'valor_total': valor_total,
-                    'percentual_rateio': percentual,
-                    'valor_rateado': valor_rateado,
-                    'responsavel': pessoa,
-                    'tipo_movimento': transacao.get('tipo_movimento', 'saida'),
-                    'pago_por': revisao.get('pago_por', ''),
-                    'quitado': status_individual
+                    'data':
+                    data_str,
+                    'descricao':
+                    revisao.get('nova_descricao', transacao['descricao']),
+                    'valor':
+                    transacao['valor'],
+                    'fonte':
+                    transacao.get('fonte', ''),
+                    'observacoes':
+                    transacao.get('observacoes', ''),
+                    'valor_total':
+                    valor_total,
+                    'percentual_rateio':
+                    percentual,
+                    'valor_rateado':
+                    valor_rateado,
+                    'responsavel':
+                    pessoa,
+                    'tipo_movimento':
+                    transacao.get('tipo_movimento', 'saida'),
+                    'pago_por':
+                    revisao.get('pago_por', ''),
+                    'quitado':
+                    status_individual
                 }
 
                 listagem_dados.append(item)
 
         # Ordena por data (mais recente primeiro) e depois por responsável
-        listagem_dados.sort(key=lambda x: (x['data'], x['responsavel']), reverse=True)
+        listagem_dados.sort(key=lambda x: (x['data'], x['responsavel']),
+                            reverse=True)
 
         # Obter lista de responsáveis únicos para o filtro
         responsaveis_unicos = set()
@@ -824,15 +949,16 @@ def listagens():
             responsaveis_unicos.update(donos.keys())
         responsaveis_unicos = sorted(list(responsaveis_unicos))
 
-        return render_template('listagens.html', 
-                             listagem_dados=listagem_dados,
-                             responsaveis_unicos=responsaveis_unicos,
-                             data_inicio=data_inicio,
-                             data_fim=data_fim,
-                             responsavel=responsavel)
+        return render_template('listagens.html',
+                               listagem_dados=listagem_dados,
+                               responsaveis_unicos=responsaveis_unicos,
+                               data_inicio=data_inicio,
+                               data_fim=data_fim,
+                               responsavel=responsavel)
 
     except Exception as e:
         return f"Erro ao carregar listagens: {str(e)}", 500
+
 
 @app.route('/exportar_listagem_csv')
 def exportar_listagem_csv():
@@ -902,17 +1028,28 @@ def exportar_listagem_csv():
                 status_individual = quitacao_individual.get(pessoa, False)
 
                 dados_csv.append({
-                    'Data': data_str,
-                    'Descrição': revisao.get('nova_descricao', transacao['descricao']),
-                    'Valor': f"R$ {transacao['valor']:.2f}",
-                    'Fonte': transacao.get('fonte', ''),
-                    'Observações': transacao.get('observacoes', ''),
-                    'Valor Total': f"R$ {valor_total:.2f}",
-                    '% Rateio': f"{percentual}%",
-                    'Valor Rateado': f"R$ {valor_rateado:.2f}",
-                    'Responsável': pessoa,
-                    'Pago Por': revisao.get('pago_por', ''),
-                    'Status Individual': 'Quitado' if status_individual else 'Pendente'
+                    'Data':
+                    data_str,
+                    'Descrição':
+                    revisao.get('nova_descricao', transacao['descricao']),
+                    'Valor':
+                    f"R$ {transacao['valor']:.2f}",
+                    'Fonte':
+                    transacao.get('fonte', ''),
+                    'Observações':
+                    transacao.get('observacoes', ''),
+                    'Valor Total':
+                    f"R$ {valor_total:.2f}",
+                    '% Rateio':
+                    f"{percentual}%",
+                    'Valor Rateado':
+                    f"R$ {valor_rateado:.2f}",
+                    'Responsável':
+                    pessoa,
+                    'Pago Por':
+                    revisao.get('pago_por', ''),
+                    'Status Individual':
+                    'Quitado' if status_individual else 'Pendente'
                 })
 
         # Ordena por data
@@ -921,7 +1058,11 @@ def exportar_listagem_csv():
         # Cria arquivo CSV em memória
         output = io.StringIO()
         if dados_csv:
-            fieldnames = ['Data', 'Descrição', 'Valor', 'Fonte', 'Observações', 'Valor Total', '% Rateio', 'Valor Rateado', 'Responsável', 'Pago Por', 'Status Individual']
+            fieldnames = [
+                'Data', 'Descrição', 'Valor', 'Fonte', 'Observações',
+                'Valor Total', '% Rateio', 'Valor Rateado', 'Responsável',
+                'Pago Por', 'Status Individual'
+            ]
             writer = csv.DictWriter(output, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(dados_csv)
@@ -938,14 +1079,16 @@ def exportar_listagem_csv():
         nome_arquivo += ".csv"
 
         # Retorna CSV como download
-        return Response(
-            csv_data,
-            mimetype='text/csv',
-            headers={'Content-Disposition': f'attachment; filename={nome_arquivo}'}
-        )
+        return Response(csv_data,
+                        mimetype='text/csv',
+                        headers={
+                            'Content-Disposition':
+                            f'attachment; filename={nome_arquivo}'
+                        })
 
     except Exception as e:
         return f"Erro ao exportar CSV: {str(e)}", 500
+
 
 @app.route('/exportar_rateio_csv')
 def exportar_rateio_csv():
@@ -1008,14 +1151,22 @@ def exportar_rateio_csv():
                 valor_pessoa = valor * (percentual / 100)
 
                 dados_csv.append({
-                    'Data': data_str,
-                    'Descrição': transacao['descricao'],
-                    'Valor Total': f"R$ {valor:.2f}",
-                    'Pessoa': pessoa,
-                    'Percentual': f"{percentual}%",
-                    'Valor Atribuído': f"R$ {valor_pessoa:.2f}",
-                    'Fonte': transacao.get('fonte', ''),
-                    'Observações': transacao.get('observacoes', '')
+                    'Data':
+                    data_str,
+                    'Descrição':
+                    transacao['descricao'],
+                    'Valor Total':
+                    f"R$ {valor:.2f}",
+                    'Pessoa':
+                    pessoa,
+                    'Percentual':
+                    f"{percentual}%",
+                    'Valor Atribuído':
+                    f"R$ {valor_pessoa:.2f}",
+                    'Fonte':
+                    transacao.get('fonte', ''),
+                    'Observações':
+                    transacao.get('observacoes', '')
                 })
 
         # Ordena por data
@@ -1024,7 +1175,10 @@ def exportar_rateio_csv():
         # Cria arquivo CSV em memória
         output = io.StringIO()
         if dados_csv:
-            fieldnames = ['Data', 'Descrição', 'Valor Total', 'Pessoa', 'Percentual', 'Valor Atribuído', 'Fonte', 'Observações']
+            fieldnames = [
+                'Data', 'Descrição', 'Valor Total', 'Pessoa', 'Percentual',
+                'Valor Atribuído', 'Fonte', 'Observações'
+            ]
             writer = csv.DictWriter(output, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(dados_csv)
@@ -1041,14 +1195,16 @@ def exportar_rateio_csv():
         nome_arquivo += ".csv"
 
         # Retorna CSV como download
-        return Response(
-            csv_data,
-            mimetype='text/csv',
-            headers={'Content-Disposition': f'attachment; filename={nome_arquivo}'}
-        )
+        return Response(csv_data,
+                        mimetype='text/csv',
+                        headers={
+                            'Content-Disposition':
+                            f'attachment; filename={nome_arquivo}'
+                        })
 
     except Exception as e:
         return f"Erro ao exportar CSV: {str(e)}", 500
+
 
 @app.route('/pagamentos')
 def pagamentos():
@@ -1147,14 +1303,22 @@ def pagamentos():
                     continue
 
                 item = {
-                    'hash': revisao['hash'],
-                    'data': data_str,
-                    'descricao': revisao.get('nova_descricao', transacao['descricao']),
-                    'valor_rateado': valor_rateado,
-                    'responsavel': pessoa,
-                    'pago_por': pago_por_revisao,
-                    'quitado': pessoa_quitou,
-                    'tipo_movimento': transacao.get('tipo_movimento', 'saida')
+                    'hash':
+                    revisao['hash'],
+                    'data':
+                    data_str,
+                    'descricao':
+                    revisao.get('nova_descricao', transacao['descricao']),
+                    'valor_rateado':
+                    valor_rateado,
+                    'responsavel':
+                    pessoa,
+                    'pago_por':
+                    pago_por_revisao,
+                    'quitado':
+                    pessoa_quitou,
+                    'tipo_movimento':
+                    transacao.get('tipo_movimento', 'saida')
                 }
 
                 pagamentos_dados.append(item)
@@ -1172,26 +1336,28 @@ def pagamentos():
         pessoas_uniques = sorted(list(pessoas_uniques))
 
         # Calcula saldos entre pessoas
-        saldos_entre_pessoas = calcular_saldos_entre_pessoas(revisoes, transacoes_map)
+        saldos_entre_pessoas = calcular_saldos_entre_pessoas(
+            revisoes, transacoes_map)
 
         # Lista de responsáveis únicos para o filtro
         responsaveis_unicos = sorted(list(todas_pessoas))
 
-        return render_template('pagamentos.html', 
-                             pagamentos_dados=pagamentos_dados,
-                             pessoas_uniques=pessoas_uniques,
-                             responsaveis_unicos=responsaveis_unicos,
-                             total_pendentes=total_pendentes,
-                             total_valor_pendente=total_valor_pendente,
-                             saldos_entre_pessoas=saldos_entre_pessoas,
-                             data_inicio=data_inicio,
-                             data_fim=data_fim,
-                             status=status,
-                             pago_por=pago_por,
-                             responsavel=responsavel_filtro)
+        return render_template('pagamentos.html',
+                               pagamentos_dados=pagamentos_dados,
+                               pessoas_uniques=pessoas_uniques,
+                               responsaveis_unicos=responsaveis_unicos,
+                               total_pendentes=total_pendentes,
+                               total_valor_pendente=total_valor_pendente,
+                               saldos_entre_pessoas=saldos_entre_pessoas,
+                               data_inicio=data_inicio,
+                               data_fim=data_fim,
+                               status=status,
+                               pago_por=pago_por,
+                               responsavel=responsavel_filtro)
 
     except Exception as e:
         return f"Erro ao carregar pagamentos: {str(e)}", 500
+
 
 def calcular_saldos_entre_pessoas(revisoes, transacoes_map):
     """
@@ -1259,6 +1425,7 @@ def calcular_saldos_entre_pessoas(revisoes, transacoes_map):
 
     return saldos_entre_pessoas
 
+
 @app.route('/atualizar_status_pagamento', methods=['POST'])
 def atualizar_status_pagamento():
     """
@@ -1271,7 +1438,10 @@ def atualizar_status_pagamento():
 
         # Validações básicas
         if not dados or not dados.get('hash') or not dados.get('responsavel'):
-            return jsonify({'success': False, 'message': 'Dados obrigatórios não informados'})
+            return jsonify({
+                'success': False,
+                'message': 'Dados obrigatórios não informados'
+            })
 
         hash_transacao = dados['hash']
         responsavel = dados['responsavel']
@@ -1282,7 +1452,10 @@ def atualizar_status_pagamento():
             with open('data/revisoes.json', 'r', encoding='utf-8') as f:
                 revisoes = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            return jsonify({'success': False, 'message': 'Revisões não encontradas'})
+            return jsonify({
+                'success': False,
+                'message': 'Revisões não encontradas'
+            })
 
         # Encontra a revisão correspondente
         revisao_encontrada = None
@@ -1292,11 +1465,19 @@ def atualizar_status_pagamento():
                 break
 
         if not revisao_encontrada:
-            return jsonify({'success': False, 'message': 'Revisão não encontrada'})
+            return jsonify({
+                'success': False,
+                'message': 'Revisão não encontrada'
+            })
 
         # Verifica se o responsável existe na lista de donos
         if responsavel not in revisao_encontrada.get('donos', {}):
-            return jsonify({'success': False, 'message': 'Responsável não encontrado nesta despesa'})
+            return jsonify({
+                'success':
+                False,
+                'message':
+                'Responsável não encontrado nesta despesa'
+            })
 
         # Inicializa quitacao_individual se não existir
         if 'quitacao_individual' not in revisao_encontrada:
@@ -1308,7 +1489,8 @@ def atualizar_status_pagamento():
         revisao_encontrada['quitacao_individual'][responsavel] = quitado
 
         # Atualiza o campo quitado geral (True apenas se todos quitaram)
-        todas_quitadas = all(revisao_encontrada['quitacao_individual'].values())
+        todas_quitadas = all(
+            revisao_encontrada['quitacao_individual'].values())
         revisao_encontrada['quitado'] = todas_quitadas
 
         # Salva arquivo atualizado
@@ -1321,7 +1503,11 @@ def atualizar_status_pagamento():
         return jsonify({'success': True, 'message': message})
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao atualizar status: {str(e)}'})
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao atualizar status: {str(e)}'
+        })
+
 
 @app.route('/quitar_em_lote', methods=['POST'])
 def quitar_em_lote():
@@ -1335,7 +1521,10 @@ def quitar_em_lote():
 
         # Validações básicas
         if not dados or not dados.get('itens'):
-            return jsonify({'success': False, 'message': 'Lista de itens é obrigatória'})
+            return jsonify({
+                'success': False,
+                'message': 'Lista de itens é obrigatória'
+            })
 
         itens = dados['itens']
         quitado = dados.get('quitado', True)
@@ -1345,7 +1534,10 @@ def quitar_em_lote():
             with open('data/revisoes.json', 'r', encoding='utf-8') as f:
                 revisoes = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
-            return jsonify({'success': False, 'message': 'Revisões não encontradas'})
+            return jsonify({
+                'success': False,
+                'message': 'Revisões não encontradas'
+            })
 
         itens_processados = 0
         erros = []
@@ -1356,7 +1548,9 @@ def quitar_em_lote():
             responsavel = item.get('responsavel')
 
             if not hash_transacao or not responsavel:
-                erros.append(f'Item inválido: hash={hash_transacao}, responsavel={responsavel}')
+                erros.append(
+                    f'Item inválido: hash={hash_transacao}, responsavel={responsavel}'
+                )
                 continue
 
             # Encontra a revisão correspondente
@@ -1367,12 +1561,15 @@ def quitar_em_lote():
                     break
 
             if not revisao_encontrada:
-                erros.append(f'Revisão não encontrada para hash: {hash_transacao}')
+                erros.append(
+                    f'Revisão não encontrada para hash: {hash_transacao}')
                 continue
 
             # Verifica se o responsável existe na lista de donos
             if responsavel not in revisao_encontrada.get('donos', {}):
-                erros.append(f'Responsável {responsavel} não encontrado na despesa {hash_transacao}')
+                erros.append(
+                    f'Responsável {responsavel} não encontrado na despesa {hash_transacao}'
+                )
                 continue
 
             # Inicializa quitacao_individual se não existir
@@ -1385,7 +1582,8 @@ def quitar_em_lote():
             revisao_encontrada['quitacao_individual'][responsavel] = quitado
 
             # Atualiza o campo quitado geral (True apenas se todos quitaram)
-            todas_quitadas = all(revisao_encontrada['quitacao_individual'].values())
+            todas_quitadas = all(
+                revisao_encontrada['quitacao_individual'].values())
             revisao_encontrada['quitado'] = todas_quitadas
 
             itens_processados += 1
@@ -1401,14 +1599,20 @@ def quitar_em_lote():
             message += f' {len(erros)} erros encontrados.'
 
         return jsonify({
-            'success': True, 
+            'success': True,
             'message': message,
             'itens_processados': itens_processados,
             'erros': erros
         })
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao processar quitação em lote: {str(e)}'})
+        return jsonify({
+            'success':
+            False,
+            'message':
+            f'Erro ao processar quitação em lote: {str(e)}'
+        })
+
 
 if __name__ == '__main__':
     # Limpa arquivos temporários antigos na inicialização
