@@ -1875,8 +1875,7 @@ def quitar_em_lote():
         })
 
 
-if __name__ == '__main__':
-    # Limpa arquivos temporários antigos na inicialização
-    cleanup_temp_files()
+
+cleanup_temp_files()
     
 
