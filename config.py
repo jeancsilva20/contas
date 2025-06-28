@@ -51,13 +51,13 @@ class DevelopmentConfig(Config):
     """Configurações para desenvolvimento"""
     DEBUG = True
     HOST = '0.0.0.0'
-    PORT = 5000
+    PORT = int(os.environ.get('PORT', 5000))
 
 class ProductionConfig(Config):
     """Configurações para produção"""
     DEBUG = False
     HOST = '0.0.0.0'
-    PORT = 5000
+    PORT = int(os.environ.get('PORT', 5000))
 
 # Configuração padrão
 config = {
@@ -65,3 +65,8 @@ config = {
     'production': ProductionConfig,
     'default': DevelopmentConfig
 }
+
+def get_config():
+    """Retorna configuração baseada no ambiente"""
+    env = os.environ.get('FLASK_ENV', 'development')
+    return config.get(env, config['default'])
