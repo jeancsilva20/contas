@@ -29,7 +29,7 @@ app.secret_key = 'sua_chave_secreta_aqui_123456789'  # Necessário para sessões
 
 @app.route('/')
 def index():
-    return redirect('/pagamentos')
+    return redirect('/rateio')
 
 
 @app.route('/upload')
