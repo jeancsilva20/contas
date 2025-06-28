@@ -1071,6 +1071,15 @@ def pagamentos():
         total_pendentes = 0
         total_valor_pendente = 0
         
+        # Obtém filtro de responsável
+        responsavel_filtro = request.args.get('responsavel', '')
+        
+        # Obtém lista de todas as pessoas para o filtro
+        todas_pessoas = set()
+        for revisao in revisoes:
+            donos = revisao.get('donos', {})
+            todas_pessoas.update(donos.keys())
+        
         # Processa cada revisão
         for revisao in revisoes:
             transacao = transacoes_map.get(revisao['hash'])
@@ -1091,13 +1100,6 @@ def pagamentos():
             
             # Obtém dados de pagamento
             pago_por_revisao = revisao.get('pago_por', '')
-            quitado = revisao.get('quitado', False)
-            
-            # Aplica filtro de status
-            if status == 'pendente' and quitado:
-                continue
-            if status == 'quitado' and not quitado:
-                continue
             
             # Aplica filtro de pago_por
             if pago_por and pago_por_revisao != pago_por:
@@ -1111,10 +1113,20 @@ def pagamentos():
             quitacao_individual = revisao.get('quitacao_individual', {})
             
             for pessoa, percentual in donos.items():
+                # Aplica filtro de responsável
+                if responsavel_filtro and pessoa != responsavel_filtro:
+                    continue
+                
                 valor_rateado = valor_total * (percentual / 100)
                 
                 # Verifica se esta pessoa específica quitou
                 pessoa_quitou = quitacao_individual.get(pessoa, False)
+                
+                # Aplica filtro de status baseado na quitação individual
+                if status == 'pendente' and pessoa_quitou:
+                    continue
+                if status == 'quitado' and not pessoa_quitou:
+                    continue
                 
                 item = {
                     'hash': revisao['hash'],
@@ -1144,16 +1156,21 @@ def pagamentos():
         # Calcula saldos entre pessoas
         saldos_entre_pessoas = calcular_saldos_entre_pessoas(revisoes, transacoes_map)
         
+        # Lista de responsáveis únicos para o filtro
+        responsaveis_unicos = sorted(list(todas_pessoas))
+        
         return render_template('pagamentos.html', 
                              pagamentos_dados=pagamentos_dados,
                              pessoas_uniques=pessoas_uniques,
+                             responsaveis_unicos=responsaveis_unicos,
                              total_pendentes=total_pendentes,
                              total_valor_pendente=total_valor_pendente,
                              saldos_entre_pessoas=saldos_entre_pessoas,
                              data_inicio=data_inicio,
                              data_fim=data_fim,
                              status=status,
-                             pago_por=pago_por)
+                             pago_por=pago_por,
+                             responsavel=responsavel_filtro)
         
     except Exception as e:
         return f"Erro ao carregar pagamentos: {str(e)}", 500
@@ -1286,7 +1303,94 @@ def atualizar_status_pagamento():
         return jsonify({'success': True, 'message': message})
         
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Erro ao atualizar status: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Erro ao atualizar status: {str(e)}'}))
+
+@app.route('/quitar_em_lote', methods=['POST'])
+def quitar_em_lote():
+    """
+    Quita múltiplos pagamentos em lote
+    """
+    try:
+        import json
+        
+        dados = request.get_json()
+        
+        # Validações básicas
+        if not dados or not dados.get('itens'):
+            return jsonify({'success': False, 'message': 'Lista de itens é obrigatória'})
+        
+        itens = dados['itens']
+        quitado = dados.get('quitado', True)
+        
+        # Carrega revisões
+        try:
+            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
+                revisoes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify({'success': False, 'message': 'Revisões não encontradas'})
+        
+        itens_processados = 0
+        erros = []
+        
+        # Processa cada item da lista
+        for item in itens:
+            hash_transacao = item.get('hash')
+            responsavel = item.get('responsavel')
+            
+            if not hash_transacao or not responsavel:
+                erros.append(f'Item inválido: hash={hash_transacao}, responsavel={responsavel}')
+                continue
+            
+            # Encontra a revisão correspondente
+            revisao_encontrada = None
+            for revisao in revisoes:
+                if revisao['hash'] == hash_transacao:
+                    revisao_encontrada = revisao
+                    break
+            
+            if not revisao_encontrada:
+                erros.append(f'Revisão não encontrada para hash: {hash_transacao}')
+                continue
+            
+            # Verifica se o responsável existe na lista de donos
+            if responsavel not in revisao_encontrada.get('donos', {}):
+                erros.append(f'Responsável {responsavel} não encontrado na despesa {hash_transacao}')
+                continue
+            
+            # Inicializa quitacao_individual se não existir
+            if 'quitacao_individual' not in revisao_encontrada:
+                revisao_encontrada['quitacao_individual'] = {}
+                for pessoa in revisao_encontrada.get('donos', {}).keys():
+                    revisao_encontrada['quitacao_individual'][pessoa] = False
+            
+            # Atualiza status de quitação individual
+            revisao_encontrada['quitacao_individual'][responsavel] = quitado
+            
+            # Atualiza o campo quitado geral (True apenas se todos quitaram)
+            todas_quitadas = all(revisao_encontrada['quitacao_individual'].values())
+            revisao_encontrada['quitado'] = todas_quitadas
+            
+            itens_processados += 1
+        
+        # Salva arquivo atualizado
+        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
+            json.dump(revisoes, f, ensure_ascii=False, indent=2)
+        
+        status_texto = 'quitados' if quitado else 'marcados como pendentes'
+        message = f'{itens_processados} pagamentos {status_texto} com sucesso!'
+        
+        if erros:
+            message += f' {len(erros)} erros encontrados.'
+        
+        return jsonify({
+            'success': True, 
+            'message': message,
+            'itens_processados': itens_processados,
+            'erros': erros
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Erro ao processar quitação em lote: {str(e)}'})
 
 if __name__ == '__main__':
     # Limpa arquivos temporários antigos na inicialização

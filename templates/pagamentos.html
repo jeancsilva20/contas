@@ -55,7 +55,19 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-2">
+                        <label for="responsavel" class="form-label">
+                            <i class="bi bi-person-badge me-1"></i>
+                            Responsável
+                        </label>
+                        <select class="form-select" id="responsavel" name="responsavel">
+                            <option value="">Todos</option>
+                            {% for pessoa in responsaveis_unicos %}
+                                <option value="{{ pessoa }}" {% if pessoa == responsavel %}selected{% endif %}>{{ pessoa }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-search me-1"></i>
                             Pesquisar
@@ -66,10 +78,42 @@
             
             <div class="card-body">
                 {% if pagamentos_dados %}
+                    <!-- Controles de seleção em lote -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="selecionarTodos">
+                                    <i class="bi bi-check-square me-1"></i>
+                                    Selecionar Tudo
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="deselecionarTodos">
+                                    <i class="bi bi-square me-1"></i>
+                                    Desmarcar Tudo
+                                </button>
+                                <span class="text-muted ms-2" id="contadorSelecionados">0 selecionados</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-success btn-sm" id="quitarLote" disabled>
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Quitar em Lote
+                                </button>
+                                <button type="button" class="btn btn-warning btn-sm" id="reverterLote" disabled>
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Reverter em Lote
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="table-responsive">
                         <table id="pagamentos-tabela" class="table table-striped table-hover" style="width:100%">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;">
+                                        <input type="checkbox" class="form-check-input" id="selecionarTodosHeader">
+                                    </th>
                                     <th><i class="bi bi-calendar3 me-1"></i>Data</th>
                                     <th><i class="bi bi-card-text me-1"></i>Descrição</th>
                                     <th><i class="bi bi-currency-dollar me-1"></i>Valor Rateado</th>
@@ -82,6 +126,11 @@
                             <tbody>
                                 {% for item in pagamentos_dados %}
                                 <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input item-checkbox" 
+                                               data-hash="{{ item.hash }}" 
+                                               data-responsavel="{{ item.responsavel }}">
+                                    </td>
                                     <td>
                                         <span class="badge bg-secondary">{{ item.data }}</span>
                                     </td>
@@ -217,28 +266,159 @@
 <script>
 $(document).ready(function() {
     // Inicializar DataTables
-    $('#pagamentos-tabela').DataTable({
+    var table = $('#pagamentos-tabela').DataTable({
         responsive: true,
         paging: true,
         searching: true,
         ordering: true,
         pageLength: 25,
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
-        order: [[0, 'desc']], // Ordenar por data (mais recente primeiro)
+        order: [[1, 'desc']], // Ordenar por data (ajustado para nova coluna)
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
         },
         columnDefs: [
             {
-                targets: [2], // Coluna de valor
+                targets: [0], // Coluna de seleção
+                orderable: false,
+                searchable: false
+            },
+            {
+                targets: [3], // Coluna de valor (ajustado para nova coluna)
                 className: 'text-end'
             },
             {
-                targets: 0, // Coluna Data
+                targets: 1, // Coluna Data (ajustado para nova coluna)
                 type: 'date'
             }
         ]
     });
+    
+    // Controles de seleção
+    function atualizarContador() {
+        var selecionados = $('.item-checkbox:checked').length;
+        $('#contadorSelecionados').text(selecionados + ' selecionados');
+        
+        // Habilita/desabilita botões de ação em lote
+        $('#quitarLote, #reverterLote').prop('disabled', selecionados === 0);
+    }
+    
+    // Selecionar todos os itens visíveis
+    $('#selecionarTodos, #selecionarTodosHeader').on('click', function() {
+        var checkboxes = table.$('.item-checkbox', {"page": "current"});
+        checkboxes.prop('checked', true);
+        atualizarContador();
+    });
+    
+    // Desmarcar todos
+    $('#deselecionarTodos').on('click', function() {
+        $('.item-checkbox').prop('checked', false);
+        $('#selecionarTodosHeader').prop('checked', false);
+        atualizarContador();
+    });
+    
+    // Atualizar contador quando checkbox individual é alterado
+    $(document).on('change', '.item-checkbox', function() {
+        atualizarContador();
+        
+        // Atualizar checkbox do header
+        var totalVisivel = table.$('.item-checkbox', {"page": "current"}).length;
+        var selecionadosVisivel = table.$('.item-checkbox:checked', {"page": "current"}).length;
+        $('#selecionarTodosHeader').prop('checked', totalVisivel > 0 && totalVisivel === selecionadosVisivel);
+    });
+    
+    // Atualizar contador e checkboxes ao mudar de página
+    table.on('draw', function() {
+        atualizarContador();
+        $('#selecionarTodosHeader').prop('checked', false);
+    });
+    
+    // Quitação em lote
+    $('#quitarLote').on('click', function() {
+        var itens = [];
+        $('.item-checkbox:checked').each(function() {
+            itens.push({
+                hash: $(this).data('hash'),
+                responsavel: $(this).data('responsavel')
+            });
+        });
+        
+        if (itens.length === 0) {
+            Notiflix.Notify.warning('Selecione pelo menos um item');
+            return;
+        }
+        
+        Notiflix.Confirm.show(
+            'Confirmar Quitação em Lote',
+            `Marcar ${itens.length} pagamentos como quitados?`,
+            'Sim, Quitar',
+            'Cancelar',
+            function() {
+                processarLote(itens, true);
+            }
+        );
+    });
+    
+    // Reversão em lote
+    $('#reverterLote').on('click', function() {
+        var itens = [];
+        $('.item-checkbox:checked').each(function() {
+            itens.push({
+                hash: $(this).data('hash'),
+                responsavel: $(this).data('responsavel')
+            });
+        });
+        
+        if (itens.length === 0) {
+            Notiflix.Notify.warning('Selecione pelo menos um item');
+            return;
+        }
+        
+        Notiflix.Confirm.show(
+            'Confirmar Reversão em Lote',
+            `Marcar ${itens.length} pagamentos como pendentes?`,
+            'Sim, Reverter',
+            'Cancelar',
+            function() {
+                processarLote(itens, false);
+            }
+        );
+    });
+    
+    function processarLote(itens, quitado) {
+        Notiflix.Loading.circle('Processando...');
+        
+        fetch('/quitar_em_lote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                itens: itens,
+                quitado: quitado
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            Notiflix.Loading.remove();
+            
+            if (data.success) {
+                Notiflix.Notify.success(data.message);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                Notiflix.Notify.failure(data.message || 'Erro ao processar lote');
+            }
+        })
+        .catch(error => {
+            Notiflix.Loading.remove();
+            Notiflix.Notify.failure('Erro ao processar lote: ' + error.message);
+        });
+    }
+    
+    // Inicializar contador
+    atualizarContador();
 });
 
 function marcarQuitado(hash, responsavel) {
