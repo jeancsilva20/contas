@@ -167,11 +167,11 @@
     <div class="col-12">
         <div class="chart-container">
             <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="data_inicio" class="form-label">Data Início</label>
                     <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="data_fim" class="form-label">Data Fim</label>
                     <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
                 </div>
@@ -183,16 +183,19 @@
                         <option value="quitado" {% if request.args.get('status_filter') == 'quitado' %}selected{% endif %}>Quitados</option>
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary">
+                <div class="col-md-2 text-end">
+                    <label for="status_filter" class="form-label"></label>
+                    <button type="submit" class="btn btn-primary form-control">
                         <i class="bi bi-funnel me-2"></i>Filtrar
                     </button>
-                    <a href="/rateio" class="btn btn-outline-secondary ms-2">
+                </div>
+                <div class="col-md-2 text-end ">
+                    <a href="/rateio" class="btn btn-outline-secondary ms-2 form-control">
                         <i class="bi bi-x-circle me-2"></i>Limpar
                     </a>
                 </div>
                 <div class="col-md-2 text-end">
-                    <button type="button" class="btn btn-success" onclick="exportarCSV()">
+                    <button type="button" class="btn btn-success form-control" onclick="exportarCSV()">
                         <i class="bi bi-download me-2"></i>Exportar CSV
                     </button>
                 </div>
