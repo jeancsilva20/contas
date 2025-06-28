@@ -64,6 +64,217 @@ def get_fontes():
         return jsonify({'error': f'Erro ao carregar fontes: {str(e)}'}), 500
 
 
+@app.route('/fontes')
+def fontes():
+    """
+    Exibe tela de gerenciamento de fontes
+    """
+    try:
+        import json
+
+        # Carrega fontes do arquivo JSON
+        try:
+            with open('data/fontes.json', 'r', encoding='utf-8') as f:
+                fontes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            # Fontes padrão caso o arquivo não exista
+            fontes = ['Cartão C6', 'Conta C6', 'Cartão XP', 'Conta XP']
+
+            # Cria o arquivo com as fontes padrão
+            os.makedirs('data', exist_ok=True)
+            with open('data/fontes.json', 'w', encoding='utf-8') as f:
+                json.dump(fontes, f, ensure_ascii=False, indent=2)
+
+        return render_template('fontes.html', fontes=fontes)
+
+    except Exception as e:
+        return f"Erro ao carregar fontes: {str(e)}", 500
+
+
+@app.route('/salvar_fonte', methods=['POST'])
+def salvar_fonte():
+    """
+    Adiciona uma nova fonte
+    """
+    try:
+        import json
+
+        dados = request.get_json()
+
+        # Validações básicas
+        if not dados or not dados.get('nome'):
+            return jsonify({
+                'success': False,
+                'message': 'Nome da fonte é obrigatório'
+            })
+
+        nome_fonte = dados['nome'].strip()
+
+        if not nome_fonte:
+            return jsonify({
+                'success': False,
+                'message': 'Nome da fonte não pode estar vazio'
+            })
+
+        # Carrega fontes existentes
+        try:
+            with open('data/fontes.json', 'r', encoding='utf-8') as f:
+                fontes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            fontes = []
+
+        # Verifica se a fonte já existe
+        if nome_fonte in fontes:
+            return jsonify({
+                'success': False,
+                'message': 'Esta fonte já existe'
+            })
+
+        # Adiciona nova fonte
+        fontes.append(nome_fonte)
+
+        # Salva arquivo atualizado
+        os.makedirs('data', exist_ok=True)
+        with open('data/fontes.json', 'w', encoding='utf-8') as f:
+            json.dump(fontes, f, ensure_ascii=False, indent=2)
+
+        return jsonify({
+            'success': True,
+            'message': 'Fonte adicionada com sucesso!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao salvar fonte: {str(e)}'
+        })
+
+
+@app.route('/editar_fonte', methods=['POST'])
+def editar_fonte():
+    """
+    Edita uma fonte existente
+    """
+    try:
+        import json
+
+        dados = request.get_json()
+
+        # Validações básicas
+        if not dados or not dados.get('nome_antigo') or not dados.get('nome_novo'):
+            return jsonify({
+                'success': False,
+                'message': 'Nome antigo e novo são obrigatórios'
+            })
+
+        nome_antigo = dados['nome_antigo'].strip()
+        nome_novo = dados['nome_novo'].strip()
+
+        if not nome_novo:
+            return jsonify({
+                'success': False,
+                'message': 'Nome da fonte não pode estar vazio'
+            })
+
+        # Carrega fontes existentes
+        try:
+            with open('data/fontes.json', 'r', encoding='utf-8') as f:
+                fontes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify({
+                'success': False,
+                'message': 'Arquivo de fontes não encontrado'
+            })
+
+        # Verifica se a fonte antiga existe
+        if nome_antigo not in fontes:
+            return jsonify({
+                'success': False,
+                'message': 'Fonte não encontrada'
+            })
+
+        # Verifica se o novo nome já existe (exceto se for o mesmo)
+        if nome_novo != nome_antigo and nome_novo in fontes:
+            return jsonify({
+                'success': False,
+                'message': 'Já existe uma fonte com este nome'
+            })
+
+        # Atualiza a fonte
+        indice = fontes.index(nome_antigo)
+        fontes[indice] = nome_novo
+
+        # Salva arquivo atualizado
+        with open('data/fontes.json', 'w', encoding='utf-8') as f:
+            json.dump(fontes, f, ensure_ascii=False, indent=2)
+
+        return jsonify({
+            'success': True,
+            'message': 'Fonte editada com sucesso!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao editar fonte: {str(e)}'
+        })
+
+
+@app.route('/excluir_fonte', methods=['POST'])
+def excluir_fonte():
+    """
+    Exclui uma fonte
+    """
+    try:
+        import json
+
+        dados = request.get_json()
+
+        # Validações básicas
+        if not dados or not dados.get('nome'):
+            return jsonify({
+                'success': False,
+                'message': 'Nome da fonte é obrigatório'
+            })
+
+        nome_fonte = dados['nome'].strip()
+
+        # Carrega fontes existentes
+        try:
+            with open('data/fontes.json', 'r', encoding='utf-8') as f:
+                fontes = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify({
+                'success': False,
+                'message': 'Arquivo de fontes não encontrado'
+            })
+
+        # Verifica se a fonte existe
+        if nome_fonte not in fontes:
+            return jsonify({
+                'success': False,
+                'message': 'Fonte não encontrada'
+            })
+
+        # Remove a fonte
+        fontes.remove(nome_fonte)
+
+        # Salva arquivo atualizado
+        with open('data/fontes.json', 'w', encoding='utf-8') as f:
+            json.dump(fontes, f, ensure_ascii=False, indent=2)
+
+        return jsonify({
+            'success': True,
+            'message': 'Fonte excluída com sucesso!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao excluir fonte: {str(e)}'
+        })
+
+
 @app.route('/pendentes')
 def pendentes():
     """
