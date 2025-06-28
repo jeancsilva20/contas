@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Nova Despesa Manual{% endblock %}
@@ -116,6 +115,23 @@
                             </div>
                         </div>
 
+                        <!-- Pago Por -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="pagoPort" class="form-label">
+                                    <i class="bi bi-person-check me-1"></i>
+                                    Pago Por
+                                </label>
+                                <select class="form-select" id="pagoPort" required>
+                                    <option value="">Selecione quem pagou</option>
+                                    {% for pessoa in pessoas_existentes %}
+                                        <option value="{{ pessoa }}">{{ pessoa }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Selecione quem pagou esta despesa</div>
+                            </div>
+                        </div>
+
                         <!-- Botões -->
                         <div class="row">
                             <div class="col-12">
@@ -171,10 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label class="form-check-label" for="${checkboxId}">${nomePessoa}</label>
                 `;
                 pessoasContainer.appendChild(checkboxDiv);
-                
+
                 // Adiciona event listener ao novo checkbox
                 checkboxDiv.querySelector('.pessoa-checkbox').addEventListener('change', atualizarPercentuais);
-                
+
                 novaPessoaInput.value = '';
             } else {
                 Notiflix.Notify.warning('Pessoa já existe na lista');
@@ -197,26 +213,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function atualizarPercentuais() {
         const pessoasSelecionadas = document.querySelectorAll('.pessoa-checkbox:checked');
-        
+
         if (pessoasSelecionadas.length > 0) {
             percentuaisContainer.style.display = 'block';
             gerarCamposPercentual(pessoasSelecionadas);
         } else {
             percentuaisContainer.style.display = 'none';
         }
-        
+
         validarFormulario();
     }
 
     function gerarCamposPercentual(pessoasSelecionadas) {
         percentuaisCampos.innerHTML = '';
-        
+
         const percentualPadrao = Math.floor(100 / pessoasSelecionadas.length);
         let percentualRestante = 100 - (percentualPadrao * pessoasSelecionadas.length);
-        
+
         pessoasSelecionadas.forEach((checkbox, index) => {
             const percentual = percentualPadrao + (index === 0 ? percentualRestante : 0);
-            
+
             const div = document.createElement('div');
             div.className = 'row mb-2';
             div.innerHTML = `
@@ -235,25 +251,25 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             percentuaisCampos.appendChild(div);
         });
-        
+
         // Adiciona event listeners aos inputs de percentual
         document.querySelectorAll('.percentual-input').forEach(input => {
             input.addEventListener('input', calcularTotalPercentual);
         });
-        
+
         calcularTotalPercentual();
     }
 
     function calcularTotalPercentual() {
         const inputs = document.querySelectorAll('.percentual-input');
         let total = 0;
-        
+
         inputs.forEach(input => {
             total += parseInt(input.value) || 0;
         });
-        
+
         totalPercentualSpan.textContent = total;
-        
+
         if (total === 100) {
             avisoPercentual.style.display = 'none';
             totalPercentualSpan.className = 'text-success fw-bold';
@@ -261,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
             avisoPercentual.style.display = 'block';
             totalPercentualSpan.className = 'text-danger fw-bold';
         }
-        
+
         validarFormulario();
     }
 
@@ -271,11 +287,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const valor = document.getElementById('valor').value;
         const pessoasSelecionadas = document.querySelectorAll('.pessoa-checkbox:checked');
         const total = parseInt(totalPercentualSpan.textContent) || 0;
-        
+
         const valido = data && descricao && valor && pessoasSelecionadas.length > 0 && total === 100;
-        
+
         salvarBtn.disabled = !valido;
-        
+
         if (valido) {
             salvarBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Salvar Despesa';
             salvarBtn.classList.remove('btn-secondary');
@@ -295,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Submissão do formulário
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const dados = {
             data: document.getElementById('data').value,
             descricao: document.getElementById('descricao').value.trim(),
@@ -324,9 +340,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Desabilitar botão
         salvarBtn.disabled = true;
         salvarBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
-        
+
         Notiflix.Loading.circle('Salvando despesa...');
-        
+
         fetch('/salvar_nova_despesa', {
             method: 'POST',
             headers: {
@@ -337,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             Notiflix.Loading.remove();
-            
+
             if (data.success) {
                 Notiflix.Notify.success(data.message);
                 setTimeout(() => {

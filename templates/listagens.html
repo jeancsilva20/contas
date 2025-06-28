@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Listagens de Transações{% endblock %}
@@ -14,7 +13,7 @@
                 </h5>
                 <span class="badge bg-info text-dark fs-6">{{ listagem_dados|length }} registros</span>
             </div>
-            
+
             <!-- Filtros -->
             <div class="card-body border-bottom">
                 <form method="GET" action="/listagens" class="row g-3">
@@ -57,7 +56,7 @@
                     </div>
                 </form>
             </div>
-            
+
             <div class="card-body">
                 {% if listagem_dados %}
                     <div class="table-responsive">
@@ -74,7 +73,7 @@
                                     <th><i class="bi bi-currency-dollar me-1"></i>Valor Rateado</th>
                                     <th><i class="bi bi-person me-1"></i>Responsável</th>
                                     <th><i class="bi bi-credit-card me-1"></i>Pago Por</th>
-                                    <th><i class="bi bi-check-circle me-1"></i>Status</th>
+                                    <th><i class="bi bi-check-circle me-1"></i>Status Individual</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -169,7 +168,7 @@
                     </div>
                 {% endif %}
             </div>
-            
+
             <div class="card-footer d-flex justify-content-between align-items-center">
                 <a href="/" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i>
@@ -234,11 +233,11 @@ $(document).ready(function() {
         color: #dc3545;
         font-weight: 600;
     }
-    
+
     .table tbody tr:hover {
         background-color: rgba(13, 110, 253, 0.05);
     }
-    
+
     .badge {
         font-size: 0.75em;
     }

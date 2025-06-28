@@ -503,6 +503,11 @@ def salvar_revisao():
         except (FileNotFoundError, json.JSONDecodeError):
             revisoes = []
         
+        # Criar estrutura de quitação individual para cada pessoa
+        quitacao_individual = {}
+        for pessoa in dados['donos'].keys():
+            quitacao_individual[pessoa] = False
+        
         # Cria nova revisão
         nova_revisao = {
             'hash': dados['hash'],
@@ -512,6 +517,7 @@ def salvar_revisao():
             'comentarios': dados['comentarios'],
             'pago_por': dados.get('pago_por', ''),
             'quitado': False,  # Por padrão, todas as contas começam não quitadas
+            'quitacao_individual': quitacao_individual,
             'data_revisao': datetime.now().isoformat(),
             'revisado_por': 'Usuario'  # Pode ser expandido para incluir autenticação
         }
@@ -659,6 +665,11 @@ def salvar_nova_despesa():
             'observacoes': dados.get('observacoes', '')
         }
         
+        # Criar estrutura de quitação individual para cada pessoa
+        quitacao_individual = {}
+        for pessoa in dados['donos'].keys():
+            quitacao_individual[pessoa] = False
+        
         # Criar revisão
         revisao = {
             'hash': hash_transacao,
@@ -667,7 +678,8 @@ def salvar_nova_despesa():
             'donos': dados['donos'],
             'comentarios': dados.get('comentarios', ''),
             'pago_por': dados.get('pago_por', ''),
-            'quitado': False,
+            'quitado': False,  # Mantém para compatibilidade
+            'quitacao_individual': quitacao_individual,
             'data_revisao': datetime.now().isoformat(),
             'revisado_por': 'Manual'
         }
@@ -763,6 +775,10 @@ def listagens():
                 
                 valor_rateado = valor_total * (percentual / 100)
                 
+                # Verifica status individual de quitação
+                quitacao_individual = revisao.get('quitacao_individual', {})
+                status_individual = quitacao_individual.get(pessoa, False)
+                
                 item = {
                     'data': data_str,
                     'descricao': revisao.get('nova_descricao', transacao['descricao']),
@@ -775,7 +791,7 @@ def listagens():
                     'responsavel': pessoa,
                     'tipo_movimento': transacao.get('tipo_movimento', 'saida'),
                     'pago_por': revisao.get('pago_por', ''),
-                    'quitado': revisao.get('quitado', False)
+                    'quitado': status_individual
                 }
                 
                 listagem_dados.append(item)
@@ -863,6 +879,10 @@ def exportar_listagem_csv():
                 
                 valor_rateado = valor_total * (percentual / 100)
                 
+                # Verifica status individual
+                quitacao_individual = revisao.get('quitacao_individual', {})
+                status_individual = quitacao_individual.get(pessoa, False)
+                
                 dados_csv.append({
                     'Data': data_str,
                     'Descrição': revisao.get('nova_descricao', transacao['descricao']),
@@ -874,7 +894,7 @@ def exportar_listagem_csv():
                     'Valor Rateado': f"R$ {valor_rateado:.2f}",
                     'Responsável': pessoa,
                     'Pago Por': revisao.get('pago_por', ''),
-                    'Status': 'Quitado' if revisao.get('quitado', False) else 'Pendente'
+                    'Status Individual': 'Quitado' if status_individual else 'Pendente'
                 })
         
         # Ordena por data
@@ -883,7 +903,7 @@ def exportar_listagem_csv():
         # Cria arquivo CSV em memória
         output = io.StringIO()
         if dados_csv:
-            fieldnames = ['Data', 'Descrição', 'Valor', 'Fonte', 'Observações', 'Valor Total', '% Rateio', 'Valor Rateado', 'Responsável', 'Pago Por', 'Status']
+            fieldnames = ['Data', 'Descrição', 'Valor', 'Fonte', 'Observações', 'Valor Total', '% Rateio', 'Valor Rateado', 'Responsável', 'Pago Por', 'Status Individual']
             writer = csv.DictWriter(output, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(dados_csv)
@@ -1088,8 +1108,13 @@ def pagamentos():
             
             # Distribui por responsável
             donos = revisao.get('donos', {})
+            quitacao_individual = revisao.get('quitacao_individual', {})
+            
             for pessoa, percentual in donos.items():
                 valor_rateado = valor_total * (percentual / 100)
+                
+                # Verifica se esta pessoa específica quitou
+                pessoa_quitou = quitacao_individual.get(pessoa, False)
                 
                 item = {
                     'hash': revisao['hash'],
@@ -1098,14 +1123,14 @@ def pagamentos():
                     'valor_rateado': valor_rateado,
                     'responsavel': pessoa,
                     'pago_por': pago_por_revisao,
-                    'quitado': quitado,
+                    'quitado': pessoa_quitou,
                     'tipo_movimento': transacao.get('tipo_movimento', 'saida')
                 }
                 
                 pagamentos_dados.append(item)
                 
-                # Conta pendentes
-                if not quitado:
+                # Conta pendentes baseado na quitação individual
+                if not pessoa_quitou:
                     total_pendentes += 1
                     total_valor_pendente += abs(valor_rateado)
         
@@ -1145,9 +1170,6 @@ def calcular_saldos_entre_pessoas(revisoes, transacoes_map):
     pessoas = set()
     
     for revisao in revisoes:
-        if revisao.get('quitado', False):
-            continue  # Pula transações já quitadas
-            
         transacao = transacoes_map.get(revisao['hash'])
         if not transacao:
             continue
@@ -1161,11 +1183,16 @@ def calcular_saldos_entre_pessoas(revisoes, transacoes_map):
             valor_total = -valor_total
         
         donos = revisao.get('donos', {})
+        quitacao_individual = revisao.get('quitacao_individual', {})
         
         # Para cada pessoa responsável, calcula quanto deve para quem pagou
         for pessoa, percentual in donos.items():
             if pessoa == pago_por:
                 continue  # Pessoa não deve para si mesma
+            
+            # Pula se esta pessoa já quitou individualmente
+            if quitacao_individual.get(pessoa, False):
+                continue
             
             valor_devido = valor_total * (percentual / 100)
             
@@ -1200,7 +1227,7 @@ def calcular_saldos_entre_pessoas(revisoes, transacoes_map):
 @app.route('/atualizar_status_pagamento', methods=['POST'])
 def atualizar_status_pagamento():
     """
-    Atualiza status de quitação de um pagamento específico
+    Atualiza status de quitação individual de um pagamento específico
     """
     try:
         import json
@@ -1232,15 +1259,29 @@ def atualizar_status_pagamento():
         if not revisao_encontrada:
             return jsonify({'success': False, 'message': 'Revisão não encontrada'})
         
-        # Atualiza status de quitação
-        revisao_encontrada['quitado'] = quitado
+        # Verifica se o responsável existe na lista de donos
+        if responsavel not in revisao_encontrada.get('donos', {}):
+            return jsonify({'success': False, 'message': 'Responsável não encontrado nesta despesa'})
+        
+        # Inicializa quitacao_individual se não existir
+        if 'quitacao_individual' not in revisao_encontrada:
+            revisao_encontrada['quitacao_individual'] = {}
+            for pessoa in revisao_encontrada.get('donos', {}).keys():
+                revisao_encontrada['quitacao_individual'][pessoa] = False
+        
+        # Atualiza status de quitação individual
+        revisao_encontrada['quitacao_individual'][responsavel] = quitado
+        
+        # Atualiza o campo quitado geral (True apenas se todos quitaram)
+        todas_quitadas = all(revisao_encontrada['quitacao_individual'].values())
+        revisao_encontrada['quitado'] = todas_quitadas
         
         # Salva arquivo atualizado
         with open('data/revisoes.json', 'w', encoding='utf-8') as f:
             json.dump(revisoes, f, ensure_ascii=False, indent=2)
         
         status_texto = 'quitado' if quitado else 'pendente'
-        message = f'Pagamento marcado como {status_texto} com sucesso!'
+        message = f'Pagamento de {responsavel} marcado como {status_texto} com sucesso!'
         
         return jsonify({'success': True, 'message': message})
         
