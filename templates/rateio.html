@@ -32,6 +32,20 @@
         letter-spacing: 1px;
     }
     
+    .status-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .status-card.pendente {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
     .chart-container {
         background: white;
         border-radius: 15px;
@@ -95,6 +109,46 @@
         background: linear-gradient(90deg, #6366f1, #8b5cf6);
         border-radius: 10px;
     }
+    
+    .saldo-card {
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .saldo-positivo {
+        background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+        border-left: 4px solid #22c55e;
+    }
+    
+    .saldo-negativo {
+        background: linear-gradient(135deg, #fef2f2, #fecaca);
+        border-left: 4px solid #ef4444;
+    }
+    
+    .saldo-zero {
+        background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+        border-left: 4px solid #64748b;
+    }
+    
+    .alert-divida {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 1px solid #f59e0b;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .valor-pendente {
+        color: #dc2626;
+        font-weight: 600;
+    }
+    
+    .valor-quitado {
+        color: #16a34a;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -103,7 +157,7 @@
     <div class="col-12">
         <h2 class="text-center mb-4">
             <i class="bi bi-pie-chart me-2"></i>
-            Rateio de Custos
+            Rateio de Custos e Saldos
         </h2>
     </div>
 </div>
@@ -121,7 +175,15 @@
                     <label for="data_fim" class="form-label">Data Fim</label>
                     <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label for="status_filter" class="form-label">Status</label>
+                    <select class="form-select" id="status_filter" name="status_filter">
+                        <option value="">Todos</option>
+                        <option value="pendente" {% if request.args.get('status_filter') == 'pendente' %}selected{% endif %}>Pendentes</option>
+                        <option value="quitado" {% if request.args.get('status_filter') == 'quitado' %}selected{% endif %}>Quitados</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-funnel me-2"></i>Filtrar
                     </button>
@@ -129,7 +191,7 @@
                         <i class="bi bi-x-circle me-2"></i>Limpar
                     </a>
                 </div>
-                <div class="col-md-3 text-end">
+                <div class="col-md-2 text-end">
                     <button type="button" class="btn btn-success" onclick="exportarCSV()">
                         <i class="bi bi-download me-2"></i>Exportar CSV
                     </button>
@@ -140,31 +202,99 @@
 </div>
 
 {% if total_transacoes > 0 %}
-<!-- Cards de Resumo -->
-<div class="row mb-5">
-    <div class="col-md-4 mb-3">
+<!-- Cards de Resumo Principal -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
         <div class="rateio-card">
             <div class="rateio-value">R$ {{ "%.2f"|format(total_geral) }}</div>
             <div class="rateio-label">Total Rateado</div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-3 mb-3">
+        <div class="status-card">
+            <div class="rateio-value">R$ {{ "%.2f"|format(total_quitado) }}</div>
+            <div class="rateio-label">Total Quitado</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="status-card pendente">
+            <div class="rateio-value">R$ {{ "%.2f"|format(total_pendente) }}</div>
+            <div class="rateio-label">Total Pendente</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
         <div class="rateio-card">
             <div class="rateio-value">{{ total_transacoes }}</div>
             <div class="rateio-label">Transações</div>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <div class="rateio-card">
-            <div class="rateio-value">{{ dados_rateio|length }}</div>
-            <div class="rateio-label">Pessoas</div>
+</div>
+
+<!-- Alertas de Dívidas Pendentes -->
+{% if dividas_pendentes %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert-divida">
+            <h5><i class="bi bi-exclamation-triangle me-2"></i>Resumo de Dívidas Pendentes</h5>
+            <div class="row">
+                {% for divida in dividas_pendentes %}
+                <div class="col-md-6 col-lg-4 mb-2">
+                    <strong>{{ divida.devedor }}</strong> deve 
+                    <span class="valor-pendente">R$ {{ "%.2f"|format(divida.valor) }}</span> 
+                    para <strong>{{ divida.credor }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Resumo de Saldos Entre Pessoas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-calculator me-2"></i>
+                Resumo de Saldos Entre Pessoas
+            </div>
+            {% if saldos_entre_pessoas %}
+                <div class="row">
+                    {% for saldo in saldos_entre_pessoas %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="saldo-card {% if saldo.saldo > 0 %}saldo-positivo{% elif saldo.saldo < 0 %}saldo-negativo{% else %}saldo-zero{% endif %}">
+                            <h6 class="fw-bold">{{ saldo.pessoa1 }} ↔ {{ saldo.pessoa2 }}</h6>
+                            {% if saldo.saldo > 0 %}
+                                <p class="mb-1 text-success">
+                                    <strong>{{ saldo.pessoa2 }} deve R$ {{ "%.2f"|format(saldo.saldo) }}</strong>
+                                </p>
+                                <small class="text-muted">para {{ saldo.pessoa1 }}</small>
+                            {% elif saldo.saldo < 0 %}
+                                <p class="mb-1 text-danger">
+                                    <strong>{{ saldo.pessoa1 }} deve R$ {{ "%.2f"|format(saldo.saldo|abs) }}</strong>
+                                </p>
+                                <small class="text-muted">para {{ saldo.pessoa2 }}</small>
+                            {% else %}
+                                <p class="mb-1 text-muted">
+                                    <strong>Contas em dia</strong>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-3">
+                    <p class="text-muted">Nenhum saldo calculado ainda.</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <div class="row">
-    <!-- Tabela de Rateio -->
-    <div class="col-lg-7 mb-4">
+    <!-- Tabela de Rateio por Pessoa -->
+    <div class="col-lg-6 mb-4">
         <div class="chart-container">
             <div class="chart-title">
                 <i class="bi bi-table me-2"></i>
@@ -176,10 +306,10 @@
                     <thead class="table-light">
                         <tr>
                             <th>Pessoa</th>
-                            <th>Valor</th>
+                            <th>Total</th>
+                            <th>Quitado</th>
+                            <th>Pendente</th>
                             <th>% do Total</th>
-                            <th>Proporção</th>
-                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -191,26 +321,16 @@
                                 </span>
                             </td>
                             <td class="valor-cell">
-                                R$ {{ "%.2f"|format(item.valor) }}
+                                R$ {{ "%.2f"|format(item.valor_total) }}
+                            </td>
+                            <td class="valor-quitado">
+                                R$ {{ "%.2f"|format(item.valor_quitado) }}
+                            </td>
+                            <td class="valor-pendente">
+                                R$ {{ "%.2f"|format(item.valor_pendente) }}
                             </td>
                             <td class="percentual-cell">
                                 {{ "%.1f"|format(item.percentual_total) }}%
-                            </td>
-                            <td>
-                                <div class="progress progress-custom" style="width: 100px;">
-                                    <div class="progress-bar progress-bar-custom" 
-                                         role="progressbar" 
-                                         style="width: {{ item.percentual_total }}%"
-                                         aria-valuenow="{{ item.percentual_total }}" 
-                                         aria-valuemin="0" 
-                                         aria-valuemax="100">
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline-success" onclick="exportarCSVPessoa('{{ item.pessoa }}')">
-                                    <i class="bi bi-download"></i>
-                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -220,43 +340,67 @@
         </div>
     </div>
     
-    <!-- Gráfico de Pizza -->
-    <div class="col-lg-5 mb-4">
+    <!-- Gráfico de Status dos Pagamentos -->
+    <div class="col-lg-6 mb-4">
         <div class="chart-container">
             <div class="chart-title">
                 <i class="bi bi-pie-chart me-2"></i>
-                Distribuição Visual
+                Status dos Pagamentos
             </div>
-            <div id="chart-rateio" style="height: 400px;"></div>
+            <div id="chart-status" style="height: 300px;"></div>
         </div>
     </div>
 </div>
 
-<!-- Resumo Estatístico -->
+<div class="row">
+    <!-- Gráfico de Pizza - Distribuição por Pessoa -->
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-person-circle me-2"></i>
+                Distribuição Visual por Pessoa
+            </div>
+            <div id="chart-rateio" style="height: 400px;"></div>
+        </div>
+    </div>
+    
+    <!-- Gráfico de Barras - Comparativo Quitado vs Pendente -->
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="bi bi-bar-chart me-2"></i>
+                Quitado vs Pendente por Pessoa
+            </div>
+            <div id="chart-comparativo" style="height: 400px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Indicadores de Performance -->
 <div class="row">
     <div class="col-12">
         <div class="chart-container">
             <div class="chart-title">
-                <i class="bi bi-calculator me-2"></i>
-                Estatísticas do Rateio
+                <i class="bi bi-speedometer me-2"></i>
+                Indicadores de Performance
             </div>
             
             <div class="row text-center">
                 <div class="col-md-3">
-                    <h5 class="text-primary">Valor Médio</h5>
-                    <p class="fs-4 fw-bold">R$ {{ "%.2f"|format(total_geral / dados_rateio|length) }}</p>
+                    <h5 class="text-success">Taxa de Quitação</h5>
+                    <p class="fs-4 fw-bold">{{ "%.1f"|format((total_quitado / total_geral * 100) if total_geral > 0 else 0) }}%</p>
                 </div>
                 <div class="col-md-3">
-                    <h5 class="text-success">Maior Responsabilidade</h5>
-                    <p class="fs-4 fw-bold">{{ dados_rateio[0].pessoa if dados_rateio else '-' }}</p>
+                    <h5 class="text-primary">Valor Médio por Pessoa</h5>
+                    <p class="fs-4 fw-bold">R$ {{ "%.2f"|format(total_geral / dados_rateio|length) if dados_rateio else 0 }}</p>
                 </div>
                 <div class="col-md-3">
-                    <h5 class="text-warning">Menor Responsabilidade</h5>
-                    <p class="fs-4 fw-bold">{{ dados_rateio[-1].pessoa if dados_rateio else '-' }}</p>
+                    <h5 class="text-warning">Maior Pendência</h5>
+                    <p class="fs-4 fw-bold">R$ {{ "%.2f"|format(maior_pendencia) }}</p>
                 </div>
                 <div class="col-md-3">
-                    <h5 class="text-info">Valor por Transação</h5>
-                    <p class="fs-4 fw-bold">R$ {{ "%.2f"|format(total_geral / total_transacoes) }}</p>
+                    <h5 class="text-info">Transações por Pessoa</h5>
+                    <p class="fs-4 fw-bold">{{ "%.1f"|format(total_transacoes / dados_rateio|length) if dados_rateio else 0 }}</p>
                 </div>
             </div>
         </div>
@@ -292,6 +436,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Dados do backend
     const dadosRateio = {{ dados_rateio | tojson }};
+    const totalQuitado = {{ total_quitado }};
+    const totalPendente = {{ total_pendente }};
     
     // Cores personalizadas por pessoa
     const coresPessoas = {
@@ -302,72 +448,148 @@ document.addEventListener('DOMContentLoaded', function() {
         'João Batista': '#ef4444'
     };
     
-    // Gráfico de Pizza - Rateio
+    // Gráfico de Status dos Pagamentos
+    const chartStatus = echarts.init(document.getElementById('chart-status'));
+    const optionStatus = {
+        tooltip: {
+            trigger: 'item',
+            formatter: function(params) {
+                return `${params.name}<br/>R$ ${params.value.toFixed(2)} (${params.percent}%)`;
+            }
+        },
+        legend: {
+            bottom: '0%',
+            left: 'center'
+        },
+        series: [{
+            name: 'Status',
+            type: 'pie',
+            radius: ['30%', '70%'],
+            center: ['50%', '40%'],
+            data: [
+                {
+                    value: totalQuitado,
+                    name: 'Quitado',
+                    itemStyle: { color: '#10b981' }
+                },
+                {
+                    value: totalPendente,
+                    name: 'Pendente',
+                    itemStyle: { color: '#f59e0b' }
+                }
+            ],
+            emphasis: {
+                itemStyle: {
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }]
+    };
+    chartStatus.setOption(optionStatus);
+    
+    // Gráfico de Pizza - Rateio por Pessoa
     const chartRateio = echarts.init(document.getElementById('chart-rateio'));
     const optionRateio = {
         tooltip: {
             trigger: 'item',
             formatter: function(params) {
-                return `${params.name}<br/>Valor: R$ ${params.value.toFixed(2)}<br/>Percentual: ${params.percent}%`;
+                return `${params.name}<br/>Total: R$ ${params.value.toFixed(2)}<br/>Percentual: ${params.percent}%`;
             }
         },
         legend: {
-            orient: 'vertical',
-            left: 'left',
+            bottom: '0%',
+            left: 'center',
             textStyle: {
                 fontSize: 11
-            },
-            formatter: function(name) {
-                return name.length > 10 ? name.substring(0, 10) + '...' : name;
             }
         },
         series: [{
             name: 'Rateio',
             type: 'pie',
             radius: ['30%', '70%'],
-            center: ['65%', '50%'],
-            avoidLabelOverlap: false,
-            itemStyle: {
-                borderRadius: 8,
-                borderColor: '#fff',
-                borderWidth: 2
-            },
-            label: {
-                show: false,
-                position: 'center'
-            },
+            center: ['50%', '40%'],
+            data: dadosRateio.map(item => ({
+                value: item.valor_total,
+                name: item.pessoa,
+                itemStyle: {
+                    color: coresPessoas[item.pessoa] || '#6b7280'
+                }
+            })),
             emphasis: {
-                label: {
-                    show: true,
-                    fontSize: '14',
-                    fontWeight: 'bold',
-                    formatter: function(params) {
-                        return `${params.name}\nR$ ${params.value.toFixed(2)}`;
-                    }
-                },
                 itemStyle: {
                     shadowBlur: 10,
                     shadowOffsetX: 0,
                     shadowColor: 'rgba(0, 0, 0, 0.5)'
                 }
-            },
-            labelLine: {
-                show: false
-            },
-            data: dadosRateio.map(item => ({
-                value: item.valor,
-                name: item.pessoa,
-                itemStyle: {
-                    color: coresPessoas[item.pessoa] || '#6b7280'
-                }
-            }))
+            }
         }]
     };
     chartRateio.setOption(optionRateio);
     
+    // Gráfico de Barras - Comparativo Quitado vs Pendente
+    const chartComparativo = echarts.init(document.getElementById('chart-comparativo'));
+    const optionComparativo = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            },
+            formatter: function(params) {
+                let result = params[0].name + '<br/>';
+                params.forEach(function(item) {
+                    result += item.seriesName + ': R$ ' + item.value.toFixed(2) + '<br/>';
+                });
+                return result;
+            }
+        },
+        legend: {
+            data: ['Quitado', 'Pendente'],
+            bottom: '0%'
+        },
+        xAxis: {
+            type: 'category',
+            data: dadosRateio.map(item => item.pessoa),
+            axisLabel: {
+                rotate: 45,
+                fontSize: 10
+            }
+        },
+        yAxis: {
+            type: 'value',
+            axisLabel: {
+                formatter: 'R$ {value}'
+            }
+        },
+        series: [
+            {
+                name: 'Quitado',
+                type: 'bar',
+                stack: 'total',
+                data: dadosRateio.map(item => item.valor_quitado),
+                itemStyle: {
+                    color: '#10b981'
+                }
+            },
+            {
+                name: 'Pendente',
+                type: 'bar',
+                stack: 'total',
+                data: dadosRateio.map(item => item.valor_pendente),
+                itemStyle: {
+                    color: '#f59e0b'
+                }
+            }
+        ]
+    };
+    chartComparativo.setOption(optionComparativo);
+    
     // Responsividade
     window.addEventListener('resize', function() {
+        chartStatus.resize();
         chartRateio.resize();
+        chartComparativo.resize();
     });
 });
 
@@ -375,22 +597,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function exportarCSV() {
     const dataInicio = document.getElementById('data_inicio').value;
     const dataFim = document.getElementById('data_fim').value;
+    const statusFilter = document.getElementById('status_filter').value;
     
     let url = '/exportar_rateio_csv?';
     if (dataInicio) url += `data_inicio=${dataInicio}&`;
     if (dataFim) url += `data_fim=${dataFim}&`;
-    
-    window.open(url, '_blank');
-}
-
-// Função para exportar CSV de uma pessoa específica
-function exportarCSVPessoa(pessoa) {
-    const dataInicio = document.getElementById('data_inicio').value;
-    const dataFim = document.getElementById('data_fim').value;
-    
-    let url = `/exportar_rateio_csv?pessoa=${encodeURIComponent(pessoa)}&`;
-    if (dataInicio) url += `data_inicio=${dataInicio}&`;
-    if (dataFim) url += `data_fim=${dataFim}&`;
+    if (statusFilter) url += `status_filter=${statusFilter}&`;
     
     window.open(url, '_blank');
 }

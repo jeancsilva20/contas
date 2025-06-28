@@ -351,6 +351,7 @@ def rateio():
         # Obtém filtros da query string
         data_inicio = request.args.get('data_inicio', '')
         data_fim = request.args.get('data_fim', '')
+        status_filter = request.args.get('status_filter', '')
 
         # Carrega revisões
         try:
@@ -370,8 +371,10 @@ def rateio():
         transacoes_map = {t['hash']: t for t in transacoes}
 
         # Calcula valores por pessoa
-        rateio_pessoa = defaultdict(float)
+        rateio_pessoa = defaultdict(lambda: {'total': 0, 'quitado': 0, 'pendente': 0})
         total_geral = 0
+        total_quitado = 0
+        total_pendente = 0
         total_transacoes = 0
 
         for revisao in revisoes:
@@ -396,27 +399,74 @@ def rateio():
             total_geral += valor
             total_transacoes += 1
 
-            # Distribui valor baseado nos percentuais
+            # Distribui valor baseado nos percentuais e status de quitação
             donos = revisao.get('donos', {})
+            quitacao_individual = revisao.get('quitacao_individual', {})
+
             for pessoa, percentual in donos.items():
                 valor_pessoa = valor * (percentual / 100)
-                rateio_pessoa[pessoa] += valor_pessoa
+                rateio_pessoa[pessoa]['total'] += valor_pessoa
+                
+                # Verifica se esta pessoa quitou individualmente
+                if quitacao_individual.get(pessoa, False):
+                    rateio_pessoa[pessoa]['quitado'] += valor_pessoa
+                    total_quitado += valor_pessoa
+                else:
+                    rateio_pessoa[pessoa]['pendente'] += valor_pessoa
+                    total_pendente += valor_pessoa
 
-        # Ordena por valor (maior para menor)
+        # Aplica filtro de status se especificado
+        if status_filter:
+            dados_filtrados = {}
+            for pessoa, valores in rateio_pessoa.items():
+                if status_filter == 'pendente' and valores['pendente'] > 0:
+                    dados_filtrados[pessoa] = valores
+                elif status_filter == 'quitado' and valores['quitado'] > 0:
+                    dados_filtrados[pessoa] = valores
+            rateio_pessoa = dados_filtrados
+
+        # Ordena por valor total (maior para menor)
         dados_rateio = [{
-            'pessoa':
-            pessoa,
-            'valor':
-            valor,
-            'percentual_total':
-            (valor / total_geral * 100) if total_geral > 0 else 0
-        } for pessoa, valor in sorted(
-            rateio_pessoa.items(), key=lambda x: x[1], reverse=True)]
+            'pessoa': pessoa,
+            'valor_total': valores['total'],
+            'valor_quitado': valores['quitado'],
+            'valor_pendente': valores['pendente'],
+            'percentual_total': (valores['total'] / total_geral * 100) if total_geral > 0 else 0
+        } for pessoa, valores in sorted(
+            rateio_pessoa.items(), key=lambda x: x[1]['total'], reverse=True)]
+
+        # Calcula saldos entre pessoas (mesmo código da tela de pagamentos)
+        saldos_entre_pessoas = calcular_saldos_entre_pessoas(revisoes, transacoes_map)
+
+        # Identifica dívidas pendentes para alertas
+        dividas_pendentes = []
+        for saldo in saldos_entre_pessoas:
+            if abs(saldo['saldo']) > 0.01:  # Ignora valores muito pequenos
+                if saldo['saldo'] > 0:
+                    dividas_pendentes.append({
+                        'devedor': saldo['pessoa2'],
+                        'credor': saldo['pessoa1'],
+                        'valor': saldo['saldo']
+                    })
+                else:
+                    dividas_pendentes.append({
+                        'devedor': saldo['pessoa1'],
+                        'credor': saldo['pessoa2'],
+                        'valor': abs(saldo['saldo'])
+                    })
+
+        # Calcula maior pendência
+        maior_pendencia = max([pessoa['valor_pendente'] for pessoa in dados_rateio]) if dados_rateio else 0
 
         return render_template('rateio.html',
                                dados_rateio=dados_rateio,
                                total_geral=total_geral,
+                               total_quitado=total_quitado,
+                               total_pendente=total_pendente,
                                total_transacoes=total_transacoes,
+                               saldos_entre_pessoas=saldos_entre_pessoas,
+                               dividas_pendentes=dividas_pendentes,
+                               maior_pendencia=maior_pendencia,
                                data_inicio=data_inicio,
                                data_fim=data_fim)
 
