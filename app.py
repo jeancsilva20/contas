@@ -1881,7 +1881,5 @@ if __name__ == '__main__':
     
     # Configuração para produção
     import os
-    debug = os.environ.get('FLASK_ENV', 'development') == 'development'
-    
-    app.run(host='0.0.0.0', debug=debug, use_reloader=False)
+    app.run(host='0.0.0.0', debug=False, use_reloader=False)
 
