@@ -6,8 +6,8 @@ import json
 class DatabaseService:
     def __init__(self):
         # Usa o Transaction Pooler do Supabase (melhor para aplicações web)
-        self.database_url = "postgresql://postgres.xwtgelviiogtdonckkve:JzEKV#x5wXeXy4g@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
-
+        self.database_url = "postgresql://contas:b62OYudl5h3htXjydOW4s3owWcxOYj7v@dpg-d1gccgffte5s738fk4n0-a/contas_xltx"
+    
     def get_connection(self):
         """Retorna conexão com o banco de dados"""
         try:
