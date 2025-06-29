@@ -1,0 +1,204 @@
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="mb-0">
+        <i class="bi bi-people me-2"></i>
+        Lista de Pessoas
+    </h6>
+    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNovaPessoa">
+        <i class="bi bi-plus-circle me-1"></i>
+        Nova Pessoa
+    </button>
+</div>
+
+{% if pessoas %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="tabelaPessoas">
+        <thead>
+            <tr>
+                <th>Nome da Pessoa</th>
+                <th width="150">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pessoa in pessoas %}
+            <tr>
+                <td>{{ pessoa }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary" onclick="editarPessoa('{{ pessoa }}')" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="excluirPessoa('{{ pessoa }}')" title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-people display-1 text-muted"></i>
+    <h5 class="text-muted mt-3">Nenhuma pessoa cadastrada</h5>
+    <p class="text-muted">Clique no botão "Nova Pessoa" para adicionar sua primeira pessoa.</p>
+</div>
+{% endif %}
+
+<!-- Modal Nova Pessoa -->
+<div class="modal fade" id="modalNovaPessoa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Nova Pessoa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovaPessoa">
+                    <div class="mb-3">
+                        <label for="nomePessoa" class="form-label">Nome da Pessoa *</label>
+                        <input type="text" class="form-control" id="nomePessoa" required maxlength="100">
+                        <div class="form-text">Ex: João Silva, Maria Santos, etc.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="salvarPessoa()">
+                    <i class="bi bi-check2 me-1"></i>Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Pessoa -->
+<div class="modal fade" id="modalEditarPessoa" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>
+                    Editar Pessoa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarPessoa">
+                    <input type="hidden" id="pessoaAntigaNome">
+                    <div class="mb-3">
+                        <label for="novoNomePessoa" class="form-label">Nome da Pessoa *</label>
+                        <input type="text" class="form-control" id="novoNomePessoa" required maxlength="100">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEdicaoPessoa()">
+                    <i class="bi bi-check2 me-1"></i>Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function salvarPessoa() {
+    const nome = $('#nomePessoa').val().trim();
+    
+    if (!nome) {
+        Notiflix.Notify.warning('Nome da pessoa é obrigatório');
+        return;
+    }
+    
+    $.ajax({
+        url: '/salvar_pessoa',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ nome: nome }),
+        success: function(response) {
+            if (response.success) {
+                Notiflix.Notify.success(response.message);
+                $('#modalNovaPessoa').modal('hide');
+                $('#formNovaPessoa')[0].reset();
+                window.carregarConteudo('pessoas');
+            } else {
+                Notiflix.Notify.failure(response.message);
+            }
+        },
+        error: function() {
+            Notiflix.Notify.failure('Erro ao salvar pessoa');
+        }
+    });
+}
+
+function editarPessoa(nome) {
+    $('#pessoaAntigaNome').val(nome);
+    $('#novoNomePessoa').val(nome);
+    $('#modalEditarPessoa').modal('show');
+}
+
+function salvarEdicaoPessoa() {
+    const nomeAntigo = $('#pessoaAntigaNome').val();
+    const nomeNovo = $('#novoNomePessoa').val().trim();
+    
+    if (!nomeNovo) {
+        Notiflix.Notify.warning('Nome da pessoa é obrigatório');
+        return;
+    }
+    
+    $.ajax({
+        url: '/editar_pessoa',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ 
+            nome_antigo: nomeAntigo,
+            nome_novo: nomeNovo 
+        }),
+        success: function(response) {
+            if (response.success) {
+                Notiflix.Notify.success(response.message);
+                $('#modalEditarPessoa').modal('hide');
+                window.carregarConteudo('pessoas');
+            } else {
+                Notiflix.Notify.failure(response.message);
+            }
+        },
+        error: function() {
+            Notiflix.Notify.failure('Erro ao editar pessoa');
+        }
+    });
+}
+
+function excluirPessoa(nome) {
+    Notiflix.Confirm.show(
+        'Confirmar Exclusão',
+        `Tem certeza que deseja excluir a pessoa "${nome}"?`,
+        'Sim, Excluir',
+        'Cancelar',
+        function() {
+            $.ajax({
+                url: '/excluir_pessoa',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ nome: nome }),
+                success: function(response) {
+                    if (response.success) {
+                        Notiflix.Notify.success(response.message);
+                        window.carregarConteudo('pessoas');
+                    } else {
+                        Notiflix.Notify.failure(response.message);
+                    }
+                },
+                error: function() {
+                    Notiflix.Notify.failure('Erro ao excluir pessoa');
+                }
+            });
+        }
+    );
+}
+</script>

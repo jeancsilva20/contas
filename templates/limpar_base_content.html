@@ -1,0 +1,151 @@
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="alert alert-warning d-flex align-items-center mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+            <div>
+                <strong>Atenção!</strong> Esta operação irá remover todos os dados das transações, revisões e pendentes.
+                Esta ação não pode ser desfeita.
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-trash3 me-2"></i>
+                    Limpar Base de Dados
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-4">
+                    Esta operação irá limpar permanentemente:
+                </p>
+                
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-clock-history text-warning me-2"></i>Transações pendentes</span>
+                        <span class="badge bg-secondary" id="totalPendentes">-</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-check-circle text-success me-2"></i>Revisões processadas</span>
+                        <span class="badge bg-secondary" id="totalRevisoes">-</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-file-earmark-text text-info me-2"></i>Transações importadas</span>
+                        <span class="badge bg-secondary" id="totalTransacoes">-</span>
+                    </li>
+                </ul>
+
+                <div class="mb-3">
+                    <label for="pinConfirmacao" class="form-label">
+                        <i class="bi bi-shield-lock me-1"></i>
+                        Digite o PIN de confirmação *
+                    </label>
+                    <input type="password" class="form-control" id="pinConfirmacao" 
+                           placeholder="Digite o PIN de segurança" maxlength="10">
+                    <div class="form-text">Digite <strong>1234</strong> para confirmar a operação.</div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-secondary" onclick="carregarTotais()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>
+                        Atualizar Totais
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarLimpeza()" id="btnLimpar">
+                        <i class="bi bi-trash3 me-2"></i>
+                        LIMPAR BASE DE DADOS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function initializeLimparBase() {
+    carregarTotais();
+}
+
+function carregarTotais() {
+    $.get('/obter_totais_tabelas')
+        .done(function(response) {
+            if (response.success) {
+                $('#totalPendentes').text(response.totais.pendentes);
+                $('#totalRevisoes').text(response.totais.revisoes);
+                $('#totalTransacoes').text(response.totais.transacoes);
+            } else {
+                Notiflix.Notify.failure('Erro ao carregar totais: ' + response.message);
+            }
+        })
+        .fail(function() {
+            Notiflix.Notify.failure('Erro ao carregar totais das tabelas');
+            $('#totalPendentes, #totalRevisoes, #totalTransacoes').text('Erro');
+        });
+}
+
+function confirmarLimpeza() {
+    const pin = $('#pinConfirmacao').val().trim();
+    
+    if (!pin) {
+        Notiflix.Notify.warning('Digite o PIN de confirmação');
+        $('#pinConfirmacao').focus();
+        return;
+    }
+    
+    if (pin !== '1234') {
+        Notiflix.Notify.failure('PIN incorreto. Tente novamente.');
+        $('#pinConfirmacao').focus().select();
+        return;
+    }
+    
+    Notiflix.Confirm.show(
+        'CONFIRMAÇÃO FINAL',
+        'Esta operação irá remover TODOS os dados permanentemente. Tem absoluta certeza?',
+        'SIM, LIMPAR TUDO',
+        'Cancelar',
+        function() {
+            executarLimpeza(pin);
+        },
+        function() {
+            $('#pinConfirmacao').val('');
+        }
+    );
+}
+
+function executarLimpeza(pin) {
+    const btnLimpar = $('#btnLimpar');
+    
+    btnLimpar.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-2"></i>Limpando...');
+    
+    $.ajax({
+        url: '/limpar_base_dados',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ pin: pin }),
+        success: function(response) {
+            if (response.success) {
+                Notiflix.Notify.success(response.message);
+                $('#pinConfirmacao').val('');
+                
+                // Atualizar totais após limpeza
+                setTimeout(function() {
+                    carregarTotais();
+                }, 1000);
+            } else {
+                Notiflix.Notify.failure(response.message);
+            }
+        },
+        error: function() {
+            Notiflix.Notify.failure('Erro ao limpar base de dados');
+        },
+        complete: function() {
+            btnLimpar.prop('disabled', false).html('<i class="bi bi-trash3 me-2"></i>LIMPAR BASE DE DADOS');
+        }
+    });
+}
+
+// Inicializar quando carregado
+$(document).ready(function() {
+    initializeLimparBase();
+});
+</script>

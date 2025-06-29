@@ -1,0 +1,153 @@
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="upload-section">
+            <h6 class="mb-3">
+                <i class="bi bi-cloud-upload me-2"></i>
+                Importar Arquivo CSV
+            </h6>
+            <p class="text-muted mb-4">
+                Faça upload de um arquivo CSV para importar suas transações. O sistema suporta diferentes formatos e permite mapear as colunas.
+            </p>
+            
+            <form id="uploadForm" enctype="multipart/form-data">
+                <!-- Seleção de Fonte -->
+                <div class="mb-3">
+                    <label for="fonte" class="form-label">
+                        <i class="bi bi-tag me-1"></i>
+                        Fonte da Transação *
+                    </label>
+                    <select class="form-select" id="fonte" name="fonte" required>
+                        <option value="">Selecione uma fonte...</option>
+                    </select>
+                    <div class="form-text">
+                        Escolha a fonte das transações que estão sendo importadas.
+                    </div>
+                </div>
+
+                <!-- Upload de Arquivo -->
+                <div class="mb-4">
+                    <label for="csvFile" class="form-label">
+                        <i class="bi bi-file-earmark-text me-1"></i>
+                        Arquivo CSV *
+                    </label>
+                    <div class="file-input-wrapper">
+                        <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required style="display: none;">
+                        <label for="csvFile" class="file-input-label" id="fileLabel">
+                            <i class="bi bi-cloud-upload me-2"></i>
+                            Clique aqui ou arraste um arquivo CSV para fazer upload
+                        </label>
+                    </div>
+                    <div class="form-text">
+                        Formatos suportados: CSV com separadores vírgula (,) ou ponto e vírgula (;)
+                    </div>
+                </div>
+
+                <!-- Botão de Upload -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary" id="uploadBtn">
+                        <i class="bi bi-upload me-2"></i>
+                        Fazer Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function initializeUploadHandlers() {
+    // Carregar fontes
+    $.get('/get_fontes')
+        .done(function(fontes) {
+            const select = $('#fonte');
+            select.empty().append('<option value="">Selecione uma fonte...</option>');
+            fontes.forEach(function(fonte) {
+                select.append(`<option value="${fonte}">${fonte}</option>`);
+            });
+        })
+        .fail(function() {
+            Notiflix.Notify.failure('Erro ao carregar fontes');
+        });
+
+    // Handler do arquivo
+    $('#csvFile').on('change', function(e) {
+        const file = e.target.files[0];
+        const label = $('#fileLabel');
+        
+        if (file) {
+            label.text(`Arquivo selecionado: ${file.name}`);
+            label.addClass('file-selected');
+        } else {
+            label.html('<i class="bi bi-cloud-upload me-2"></i>Clique aqui ou arraste um arquivo CSV para fazer upload');
+            label.removeClass('file-selected');
+        }
+    });
+
+    // Handler do formulário
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const file = $('#csvFile')[0].files[0];
+        const fonte = $('#fonte').val();
+        
+        if (!file) {
+            Notiflix.Notify.warning('Selecione um arquivo CSV');
+            return;
+        }
+        
+        if (!fonte) {
+            Notiflix.Notify.warning('Selecione uma fonte');
+            return;
+        }
+        
+        formData.append('file', file);
+        formData.append('fonte', fonte);
+        
+        const uploadBtn = $('#uploadBtn');
+        uploadBtn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-2"></i>Processando...');
+        
+        $.ajax({
+            url: '/process_upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    Notiflix.Notify.success(response.message);
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        // Reset form
+                        $('#uploadForm')[0].reset();
+                        $('#fileLabel').html('<i class="bi bi-cloud-upload me-2"></i>Clique aqui ou arraste um arquivo CSV para fazer upload');
+                        $('#fileLabel').removeClass('file-selected');
+                    }
+                } else {
+                    if (response.requires_mapping && response.redirect_url) {
+                        Notiflix.Notify.info('Redirecionando para mapeamento de colunas...');
+                        setTimeout(() => {
+                            window.location.href = response.redirect_url;
+                        }, 1500);
+                    } else {
+                        Notiflix.Notify.failure(response.message);
+                    }
+                }
+            },
+            error: function() {
+                Notiflix.Notify.failure('Erro ao processar arquivo');
+            },
+            complete: function() {
+                uploadBtn.prop('disabled', false).html('<i class="bi bi-upload me-2"></i>Fazer Upload');
+            }
+        });
+    });
+}
+
+// Inicializar quando o conteúdo for carregado
+$(document).ready(function() {
+    initializeUploadHandlers();
+});
+</script>

@@ -1,0 +1,268 @@
+
+{% extends "base.html" %}
+
+{% block title %}Limpar Base de Dados - Sistema de Gestão de Contas{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Limpar Base de Dados
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        ATENÇÃO: Ação Irreversível!
+                    </h6>
+                    <p class="mb-0">
+                        Esta ação irá <strong>excluir permanentemente</strong> todos os dados das seguintes tabelas:
+                    </p>
+                    <ul class="mt-2 mb-0">
+                        <li><strong>Pendentes:</strong> Todas as transações aguardando revisão</li>
+                        <li><strong>Revisões:</strong> Todas as revisões e rateios realizados</li>
+                        <li><strong>Transações:</strong> Todas as transações importadas</li>
+                    </ul>
+                    <hr>
+                    <p class="mb-0">
+                        <strong>Os dados das tabelas "Fontes" e "Pessoas" serão mantidos.</strong>
+                    </p>
+                </div>
+
+                <div class="text-center py-4">
+                    <i class="bi bi-database-x text-danger" style="font-size: 4rem;"></i>
+                    <h5 class="text-danger mt-3">Reset Completo do Sistema</h5>
+                    <p class="text-muted">
+                        Use esta função apenas quando desejar recomeçar do zero com o sistema.
+                    </p>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <button class="btn btn-danger btn-lg w-100" id="btnLimparDados">
+                            <i class="bi bi-trash3 me-2"></i>
+                            Limpar Dados
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-lock me-1"></i>
+                        Esta ação requer confirmação com PIN de segurança
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmação PIN -->
+<div class="modal fade" id="modalConfirmacaoPin" tabindex="-1" aria-labelledby="modalConfirmacaoPinLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalConfirmacaoPinLabel">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    Confirmação de Segurança
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <strong>Última confirmação!</strong> Esta ação não pode ser desfeita.
+                </div>
+                
+                <form id="formConfirmacaoPin">
+                    <div class="mb-3">
+                        <label for="pinSeguranca" class="form-label">
+                            <i class="bi bi-key me-1"></i>
+                            Digite o PIN de segurança:
+                        </label>
+                        <input type="password" class="form-control form-control-lg text-center" 
+                               id="pinSeguranca" 
+                               placeholder="••••" 
+                               maxlength="4" 
+                               autocomplete="off" 
+                               required>
+                        <div class="form-text">Insira o PIN de 4 dígitos para confirmar a ação.</div>
+                    </div>
+                </form>
+
+                <div class="mt-4">
+                    <h6>Dados que serão excluídos:</h6>
+                    <div id="resumoDados" class="row text-center">
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <h6 class="card-title mb-1">Pendentes</h6>
+                                    <span id="totalPendentes" class="badge bg-warning">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <h6 class="card-title mb-1">Revisões</h6>
+                                    <span id="totalRevisoes" class="badge bg-info">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <h6 class="card-title mb-1">Transações</h6>
+                                    <span id="totalTransacoes" class="badge bg-secondary">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarLimpeza">
+                    <i class="bi bi-trash3 me-1"></i>
+                    Confirmar Limpeza
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Event listener para botão limpar dados
+    $('#btnLimparDados').click(function() {
+        carregarResumoEAbrirModal();
+    });
+
+    // Event listener para confirmar limpeza
+    $('#btnConfirmarLimpeza').click(function() {
+        executarLimpeza();
+    });
+
+    // Event listener para formulário PIN
+    $('#formConfirmacaoPin').submit(function(e) {
+        e.preventDefault();
+        executarLimpeza();
+    });
+
+    // Auto-focus no PIN quando modal abrir
+    $('#modalConfirmacaoPin').on('shown.bs.modal', function() {
+        $('#pinSeguranca').focus();
+    });
+
+    // Limpar PIN quando modal fechar
+    $('#modalConfirmacaoPin').on('hidden.bs.modal', function() {
+        $('#pinSeguranca').val('');
+    });
+});
+
+function carregarResumoEAbrirModal() {
+    Notiflix.Loading.circle('Carregando dados...');
+    
+    // Buscar totais das tabelas
+    fetch('/obter_totais_tabelas', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        Notiflix.Loading.remove();
+        
+        if (data.success) {
+            $('#totalPendentes').text(data.totais.pendentes);
+            $('#totalRevisoes').text(data.totais.revisoes);
+            $('#totalTransacoes').text(data.totais.transacoes);
+            
+            // Abrir modal
+            const modalElement = document.getElementById('modalConfirmacaoPin');
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else {
+            Notiflix.Notify.failure('Erro ao carregar dados: ' + data.message);
+        }
+    })
+    .catch(error => {
+        Notiflix.Loading.remove();
+        Notiflix.Notify.failure('Erro ao carregar dados: ' + error.message);
+    });
+}
+
+function executarLimpeza() {
+    const pin = $('#pinSeguranca').val().trim();
+    
+    if (!pin) {
+        Notiflix.Notify.warning('Por favor, digite o PIN de segurança');
+        $('#pinSeguranca').focus();
+        return;
+    }
+    
+    if (pin.length !== 4) {
+        Notiflix.Notify.warning('PIN deve ter 4 dígitos');
+        $('#pinSeguranca').focus();
+        return;
+    }
+    
+    const btn = $('#btnConfirmarLimpeza');
+    btn.prop('disabled', true);
+    btn.html('<span class="spinner-border spinner-border-sm me-1"></span>Executando...');
+    
+    Notiflix.Loading.circle('Limpando base de dados...');
+    
+    fetch('/limpar_base_dados', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            pin: pin
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        Notiflix.Loading.remove();
+        
+        if (data.success) {
+            Notiflix.Notify.success('Base de dados limpa com sucesso!');
+            
+            // Fechar modal
+            const modalElement = document.getElementById('modalConfirmacaoPin');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Redirecionar para página inicial após sucesso
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        } else {
+            Notiflix.Notify.failure(data.message || 'Erro ao limpar base de dados');
+            $('#pinSeguranca').val('').focus();
+        }
+    })
+    .catch(error => {
+        Notiflix.Loading.remove();
+        Notiflix.Notify.failure('Erro ao limpar base de dados: ' + error.message);
+        $('#pinSeguranca').val('').focus();
+    })
+    .finally(() => {
+        btn.prop('disabled', false);
+        btn.html('<i class="bi bi-trash3 me-1"></i>Confirmar Limpeza');
+    });
+}
+</script>
+{% endblock %}

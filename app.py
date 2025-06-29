@@ -32,9 +32,71 @@ def index():
     return redirect('/rateio')
 
 
+@app.route('/dados')
+def dados():
+    """
+    Exibe página principal de gerenciamento de dados com tabs
+    """
+    return render_template('dados.html')
+
+
 @app.route('/upload')
 def upload():
     return render_template('upload.html')
+
+
+@app.route('/upload_content')
+def upload_content():
+    """
+    Retorna apenas o conteúdo da tab de upload
+    """
+    return render_template('upload_content.html')
+
+
+@app.route('/fontes_content')
+def fontes_content():
+    """
+    Retorna apenas o conteúdo da tab de fontes
+    """
+    try:
+        from services.database import FonteService
+        fonte_service = FonteService()
+        fontes = fonte_service.listar_fontes()
+
+        if not fontes:
+            if fonte_service.migrar_fontes_json():
+                fontes = fonte_service.listar_fontes()
+
+        return render_template('fontes_content.html', fontes=fontes)
+    except Exception as e:
+        return f"Erro ao carregar fontes: {str(e)}", 500
+
+
+@app.route('/pessoas_content')
+def pessoas_content():
+    """
+    Retorna apenas o conteúdo da tab de pessoas
+    """
+    try:
+        from services.database import PessoaService
+        pessoa_service = PessoaService()
+        pessoas = pessoa_service.listar_pessoas()
+
+        if not pessoas:
+            if pessoa_service.migrar_pessoas_json():
+                pessoas = pessoa_service.listar_pessoas()
+
+        return render_template('pessoas_content.html', pessoas=pessoas)
+    except Exception as e:
+        return f"Erro ao carregar pessoas: {str(e)}", 500
+
+
+@app.route('/limpar_base_content')
+def limpar_base_content():
+    """
+    Retorna apenas o conteúdo da tab de limpar base
+    """
+    return render_template('limpar_base_content.html')
 
 
 @app.route('/get_fontes')
@@ -43,20 +105,15 @@ def get_fontes():
     Retorna lista de fontes disponíveis
     """
     try:
-        import json
+        from services.database import FonteService
 
-        # Carrega fontes do arquivo JSON
-        try:
-            with open('data/fontes.json', 'r', encoding='utf-8') as f:
-                fontes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            # Fontes padrão caso o arquivo não exista
-            fontes = ['Cartão C6', 'Conta C6', 'Cartão XP', 'Conta XP']
+        fonte_service = FonteService()
+        fontes = fonte_service.listar_fontes()
 
-            # Cria o arquivo com as fontes padrão
-            os.makedirs('data', exist_ok=True)
-            with open('data/fontes.json', 'w', encoding='utf-8') as f:
-                json.dump(fontes, f, ensure_ascii=False, indent=2)
+        # Se não há fontes no banco, faz migração inicial
+        if not fontes:
+            if fonte_service.migrar_fontes_json():
+                fontes = fonte_service.listar_fontes()
 
         return jsonify(fontes)
 
@@ -70,20 +127,15 @@ def fontes():
     Exibe tela de gerenciamento de fontes
     """
     try:
-        import json
+        from services.database import FonteService
 
-        # Carrega fontes do arquivo JSON
-        try:
-            with open('data/fontes.json', 'r', encoding='utf-8') as f:
-                fontes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            # Fontes padrão caso o arquivo não exista
-            fontes = ['Cartão C6', 'Conta C6', 'Cartão XP', 'Conta XP']
+        fonte_service = FonteService()
+        fontes = fonte_service.listar_fontes()
 
-            # Cria o arquivo com as fontes padrão
-            os.makedirs('data', exist_ok=True)
-            with open('data/fontes.json', 'w', encoding='utf-8') as f:
-                json.dump(fontes, f, ensure_ascii=False, indent=2)
+        # Se não há fontes no banco, faz migração inicial
+        if not fontes:
+            if fonte_service.migrar_fontes_json():
+                fontes = fonte_service.listar_fontes()
 
         return render_template('fontes.html', fontes=fontes)
 
@@ -97,7 +149,7 @@ def salvar_fonte():
     Adiciona uma nova fonte
     """
     try:
-        import json
+        from services.database import FonteService
 
         dados = request.get_json()
 
@@ -116,27 +168,17 @@ def salvar_fonte():
                 'message': 'Nome da fonte não pode estar vazio'
             })
 
-        # Carrega fontes existentes
-        try:
-            with open('data/fontes.json', 'r', encoding='utf-8') as f:
-                fontes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            fontes = []
+        fonte_service = FonteService()
 
         # Verifica se a fonte já existe
-        if nome_fonte in fontes:
+        if fonte_service.fonte_existe(nome_fonte):
             return jsonify({
                 'success': False,
                 'message': 'Esta fonte já existe'
             })
 
         # Adiciona nova fonte
-        fontes.append(nome_fonte)
-
-        # Salva arquivo atualizado
-        os.makedirs('data', exist_ok=True)
-        with open('data/fontes.json', 'w', encoding='utf-8') as f:
-            json.dump(fontes, f, ensure_ascii=False, indent=2)
+        fonte_service.adicionar_fonte(nome_fonte)
 
         return jsonify({
             'success': True,
@@ -156,7 +198,7 @@ def editar_fonte():
     Edita uma fonte existente
     """
     try:
-        import json
+        from services.database import FonteService
 
         dados = request.get_json()
 
@@ -176,37 +218,24 @@ def editar_fonte():
                 'message': 'Nome da fonte não pode estar vazio'
             })
 
-        # Carrega fontes existentes
-        try:
-            with open('data/fontes.json', 'r', encoding='utf-8') as f:
-                fontes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return jsonify({
-                'success': False,
-                'message': 'Arquivo de fontes não encontrado'
-            })
+        fonte_service = FonteService()
 
         # Verifica se a fonte antiga existe
-        if nome_antigo not in fontes:
+        if not fonte_service.fonte_existe(nome_antigo):
             return jsonify({
                 'success': False,
                 'message': 'Fonte não encontrada'
             })
 
         # Verifica se o novo nome já existe (exceto se for o mesmo)
-        if nome_novo != nome_antigo and nome_novo in fontes:
+        if nome_novo != nome_antigo and fonte_service.fonte_existe(nome_novo):
             return jsonify({
                 'success': False,
                 'message': 'Já existe uma fonte com este nome'
             })
 
         # Atualiza a fonte
-        indice = fontes.index(nome_antigo)
-        fontes[indice] = nome_novo
-
-        # Salva arquivo atualizado
-        with open('data/fontes.json', 'w', encoding='utf-8') as f:
-            json.dump(fontes, f, ensure_ascii=False, indent=2)
+        fonte_service.editar_fonte(nome_antigo, nome_novo)
 
         return jsonify({
             'success': True,
@@ -226,7 +255,7 @@ def excluir_fonte():
     Exclui uma fonte
     """
     try:
-        import json
+        from services.database import FonteService
 
         dados = request.get_json()
 
@@ -238,30 +267,17 @@ def excluir_fonte():
             })
 
         nome_fonte = dados['nome'].strip()
-
-        # Carrega fontes existentes
-        try:
-            with open('data/fontes.json', 'r', encoding='utf-8') as f:
-                fontes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return jsonify({
-                'success': False,
-                'message': 'Arquivo de fontes não encontrado'
-            })
+        fonte_service = FonteService()
 
         # Verifica se a fonte existe
-        if nome_fonte not in fontes:
+        if not fonte_service.fonte_existe(nome_fonte):
             return jsonify({
                 'success': False,
                 'message': 'Fonte não encontrada'
             })
 
-        # Remove a fonte
-        fontes.remove(nome_fonte)
-
-        # Salva arquivo atualizado
-        with open('data/fontes.json', 'w', encoding='utf-8') as f:
-            json.dump(fontes, f, ensure_ascii=False, indent=2)
+        # Remove a fonte (soft delete)
+        fonte_service.excluir_fonte(nome_fonte)
 
         return jsonify({
             'success': True,
@@ -278,25 +294,33 @@ def excluir_fonte():
 @app.route('/pendentes')
 def pendentes():
     """
-    Exibe lançamentos pendentes de revisão
+    Exibe transações pendentes de categorização
     """
+    from services.database import PendenteService, PessoaService
+
     try:
-        import json
+        # Carrega dados do banco
+        pendente_service = PendenteService()
+        pessoa_service = PessoaService()
 
-        # Carrega pendentes
-        try:
-            with open('data/pendentes.json', 'r', encoding='utf-8') as f:
-                pendentes_data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pendentes_data = []
+        pendentes_data = pendente_service.listar_pendentes()
 
-        # Ordena por data (mais recentes primeiro)
-        pendentes_data.sort(key=lambda x: x.get('data', ''), reverse=True)
+        # Obtém lista de pessoas do banco
+        pessoas_lista = pessoa_service.listar_pessoas()
 
-        return render_template('pendentes.html', pendentes=pendentes_data)
+        # Se não há pessoas no banco, faz migração inicial
+        if not pessoas_lista:
+            if pessoa_service.migrar_pessoas_json():
+                pessoas_lista = pessoa_service.listar_pessoas()
 
     except Exception as e:
-        return f"Erro ao carregar pendentes: {str(e)}", 500
+        print(f"Erro ao carregar pendentes: {e}")
+        pendentes_data = []
+        pessoas_lista = []
+
+    return render_template('pendentes.html', 
+                         pendentes=pendentes_data,
+                         pessoas=pessoas_lista)
 
 
 @app.route('/process_upload', methods=['POST'])
@@ -556,7 +580,7 @@ def rateio():
     Exibe rateio dos custos entre as pessoas baseado nas revisões
     """
     try:
-        import json
+        from services.database import RevisaoService, TransacaoService
         from collections import defaultdict
 
         # Obtém filtros da query string
@@ -564,19 +588,12 @@ def rateio():
         data_fim = request.args.get('data_fim', '')
         status_filter = request.args.get('status_filter', '')
 
-        # Carrega revisões
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            revisoes = []
+        # Carrega dados do banco
+        revisao_service = RevisaoService()
+        transacao_service = TransacaoService()
 
-        # Carrega transações para obter valores
-        try:
-            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
-                transacoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            transacoes = []
+        revisoes = revisao_service.listar_revisoes()
+        transacoes = transacao_service.listar_transacoes()
 
         # Cria mapa de transações por hash
         transacoes_map = {t['hash']: t for t in transacoes}
@@ -603,9 +620,9 @@ def rateio():
 
             # Para entradas, mantém valor negativo; para saídas, usa absoluto
             if transacao.get('tipo_movimento') == 'entrada':
-                valor = transacao['valor']  # Negativo para entradas
+                valor = float(transacao['valor'])  # Negativo para entradas
             else:
-                valor = abs(transacao['valor'])  # Positivo para saídas
+                valor = abs(float(transacao['valor']))  # Positivo para saídas
 
             total_geral += valor
             total_transacoes += 1
@@ -617,7 +634,7 @@ def rateio():
             for pessoa, percentual in donos.items():
                 valor_pessoa = valor * (percentual / 100)
                 rateio_pessoa[pessoa]['total'] += valor_pessoa
-                
+
                 # Verifica se esta pessoa quitou individualmente
                 if quitacao_individual.get(pessoa, False):
                     rateio_pessoa[pessoa]['quitado'] += valor_pessoa
@@ -813,7 +830,7 @@ def salvar_revisao():
     Salva uma revisão de transação e remove ela dos pendentes
     """
     try:
-        import json
+        from services.database import RevisaoService, PendenteService
         from datetime import datetime
 
         dados = request.get_json()
@@ -830,60 +847,37 @@ def salvar_revisao():
                 'message': 'O total dos percentuais deve ser 100%'
             })
 
-        # Carrega revisões existentes
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            revisoes = []
-
         # Criar estrutura de quitação individual para cada pessoa
         quitacao_individual = {}
+        pago_por = dados.get('pago_por', '')
+
         for pessoa in dados['donos'].keys():
-            quitacao_individual[pessoa] = False
+            # Se a pessoa que deve é a mesma que pagou, marca como quitado automaticamente
+            if pessoa == pago_por:
+                quitacao_individual[pessoa] = True
+            else:
+                quitacao_individual[pessoa] = False
 
-        # Cria nova revisão
-        nova_revisao = {
-            'hash': dados['hash'],
-            'id_original': dados['id'],
-            'nova_descricao': dados['nova_descricao'],
-            'donos': dados['donos'],
-            'comentarios': dados['comentarios'],
-            'pago_por': dados.get('pago_por', ''),
-            'quitado':
-            False,  # Por padrão, todas as contas começam não quitadas
-            'quitacao_individual': quitacao_individual,
-            'data_revisao': datetime.now().isoformat(),
-            'revisado_por':
-            'Usuario'  # Pode ser expandido para incluir autenticação
-        }
+        # Inicializa serviços
+        revisao_service = RevisaoService()
+        pendente_service = PendenteService()
 
-        # Adiciona à lista de revisões
-        revisoes.append(nova_revisao)
+        # Adiciona nova revisão no banco
+        revisao_service.adicionar_revisao(
+            hash_transacao=dados['hash'],
+            id_original=dados['id'],
+            nova_descricao=dados['nova_descricao'],
+            donos=dados['donos'],
+            comentarios=dados['comentarios'],
+            pago_por=dados.get('pago_por', ''),
+            quitado=False,  # Por padrão, todas as contas começam não quitadas
+            quitacao_individual=quitacao_individual,
+            data_revisao=datetime.now(),
+            revisado_por='Usuario'  # Pode ser expandido para incluir autenticação
+        )
 
-        # Salva revisões atualizadas
-        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
-            json.dump(revisoes, f, ensure_ascii=False, indent=2)
-
-        # Remove transação dos pendentes
-        try:
-            with open('data/pendentes.json', 'r', encoding='utf-8') as f:
-                pendentes = json.load(f)
-
-            # Filtra removendo a transação revisada
-            pendentes_atualizados = [
-                p for p in pendentes if p.get('hash') != dados['hash']
-            ]
-
-            # Salva pendentes atualizados
-            with open('data/pendentes.json', 'w', encoding='utf-8') as f:
-                json.dump(pendentes_atualizados,
-                          f,
-                          ensure_ascii=False,
-                          indent=2)
-
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass  # Se não conseguir carregar pendentes, continua
+        # Remove transação dos pendentes (soft delete)
+        pendente_service.excluir_pendente(dados['hash'])
 
         return jsonify({
             'success': True,
@@ -903,7 +897,7 @@ def excluir_pendente():
     Remove uma transação da lista de pendentes
     """
     try:
-        import json
+        from services.database import PendenteService
 
         dados = request.get_json()
 
@@ -915,30 +909,28 @@ def excluir_pendente():
             })
 
         hash_transacao = dados['hash']
+        pendente_service = PendenteService()
 
-        # Carrega pendentes atuais
-        try:
-            with open('data/pendentes.json', 'r', encoding='utf-8') as f:
-                pendentes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
+        # Verifica se a transação existe
+        if not pendente_service.pendente_existe(hash_transacao):
             return jsonify({
                 'success': False,
-                'message': 'Lista de pendentes não encontrada'
+                'message': 'Transação não encontrada na lista de pendentes'
             })
 
-        # Filtra removendo a transação com o hash especificado
-        pendentes_filtrados = [
-            p for p in pendentes if p.get('hash') != hash_transacao
-        ]
+        # Remove a transação (soft delete)
+        pendente_service.excluir_pendente(hash_transacao)
 
-        # Verifica se a transação foi encontrada
-        if len(pendentes_filtrados) == len(pendentes):
-            return jsonify({
-                'success':
-                False,
-                'message':
-                'Transação não encontrada na lista de pendentes'
-            })
+        return jsonify({
+            'success': True,
+            'message': 'Transação removida da lista de pendentes!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao excluir pendente: {str(e)}'
+        })
 
         # Salva a lista atualizada
         with open('data/pendentes.json', 'w', encoding='utf-8') as f:
@@ -962,21 +954,15 @@ def nova_despesa():
     Exibe formulário para adicionar nova despesa manualmente
     """
     try:
-        import json
+        from services.database import PessoaService
 
-        # Carrega revisões para obter lista de pessoas
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            revisoes = []
+        pessoa_service = PessoaService()
+        pessoas_existentes = pessoa_service.listar_pessoas()
 
-        # Obter lista de pessoas únicas das revisões existentes
-        pessoas_existentes = set()
-        for revisao in revisoes:
-            donos = revisao.get('donos', {})
-            pessoas_existentes.update(donos.keys())
-        pessoas_existentes = sorted(list(pessoas_existentes))
+        # Se não há pessoas no banco, faz migração inicial
+        if not pessoas_existentes:
+            if pessoa_service.migrar_pessoas_json():
+                pessoas_existentes = pessoa_service.listar_pessoas()
 
         return render_template('nova_despesa.html',
                                pessoas_existentes=pessoas_existentes)
@@ -1011,7 +997,7 @@ def salvar_nova_despesa():
                 return jsonify({
                     'success': False,
                     'message': f'Campo {campo} é obrigatório'
-                })
+                                })
 
         # Validar percentuais
         total_percentual = sum(dados.get('donos', {}).values())
@@ -1119,19 +1105,13 @@ def listagens():
         data_fim = request.args.get('data_fim', '')
         responsavel = request.args.get('responsavel', '')
 
-        # Carrega revisões
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            revisoes = []
+        # Carrega revisões do banco
+        from services.database import RevisaoService, TransacaoService
+        revisao_service = RevisaoService()
+        transacao_service = TransacaoService()
 
-        # Carrega transações para obter valores e datas
-        try:
-            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
-                transacoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            transacoes = []
+        revisoes = revisao_service.listar_revisoes()
+        transacoes = transacao_service.listar_transacoes()
 
         # Cria mapa de transações por hash
         transacoes_map = {t['hash']: t for t in transacoes}
@@ -1152,8 +1132,8 @@ def listagens():
             if data_fim and data_str > data_fim:
                 continue
 
-            # Valor total da transação
-            valor_total = abs(transacao['valor'])
+            # Valor total da transação (converte Decimal para float)
+            valor_total = float(abs(transacao['valor']))
             if transacao.get('tipo_movimento') == 'entrada':
                 valor_total = -valor_total
 
@@ -1239,19 +1219,13 @@ def exportar_listagem_csv():
         data_fim = request.args.get('data_fim', '')
         responsavel = request.args.get('responsavel', '')
 
-        # Carrega revisões
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            revisoes = []
+        # Carrega revisões do banco
+        from services.database import RevisaoService, TransacaoService
+        revisao_service = RevisaoService()
+        transacao_service = TransacaoService()
 
-        # Carrega transações
-        try:
-            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
-                transacoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            transacoes = []
+        revisoes = revisao_service.listar_revisoes()
+        transacoes = transacao_service.listar_transacoes()
 
         # Cria mapa de transações por hash
         transacoes_map = {t['hash']: t for t in transacoes}
@@ -1483,19 +1457,13 @@ def pagamentos():
         status = request.args.get('status', '')
         pago_por = request.args.get('pago_por', '')
 
-        # Carrega revisões
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            revisoes = []
+        # Carrega revisões e transações do banco
+        from services.database import RevisaoService, TransacaoService
+        revisao_service = RevisaoService()
+        transacao_service = TransacaoService()
 
-        # Carrega transações
-        try:
-            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
-                transacoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            transacoes = []
+        revisoes = revisao_service.listar_revisoes()
+        transacoes = transacao_service.listar_transacoes()
 
         # Cria mapa de transações por hash
         transacoes_map = {t['hash']: t for t in transacoes}
@@ -1528,8 +1496,8 @@ def pagamentos():
             if data_fim and data_str > data_fim:
                 continue
 
-            # Valor total da transação
-            valor_total = abs(transacao['valor'])
+            # Valor total da transação (converte Decimal para float)
+            valor_total = float(abs(transacao['valor']))
             if transacao.get('tipo_movimento') == 'entrada':
                 valor_total = -valor_total
 
@@ -1640,7 +1608,8 @@ def calcular_saldos_entre_pessoas(revisoes, transacoes_map):
         if not pago_por:
             continue
 
-        valor_total = abs(transacao['valor'])
+        # Valor total da transação (converte Decimal para float)
+        valor_total = float(abs(float(transacao['valor'])))
         if transacao.get('tipo_movimento') == 'entrada':
             valor_total = -valor_total
 
@@ -1692,47 +1661,36 @@ def atualizar_status_pagamento():
     """
     Atualiza status de quitação individual de um pagamento específico
     """
-    try:
-        import json
+    from services.database import RevisaoService
 
-        dados = request.get_json()
+    try:
+        data = request.get_json()
 
         # Validações básicas
-        if not dados or not dados.get('hash') or not dados.get('responsavel'):
+        if not data or not data.get('hash') or not data.get('responsavel'):
             return jsonify({
                 'success': False,
                 'message': 'Dados obrigatórios não informados'
             })
 
-        hash_transacao = dados['hash']
-        responsavel = dados['responsavel']
-        quitado = dados.get('quitado', False)
+        hash_transacao = data['hash']
+        responsavel = data['responsavel']
+        quitado = data.get('quitado', False)
 
-        # Carrega revisões
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return jsonify({
-                'success': False,
-                'message': 'Revisões não encontradas'
-            })
+        # Inicializa serviço
+        revisao_service = RevisaoService()
 
-        # Encontra a revisão correspondente
-        revisao_encontrada = None
-        for revisao in revisoes:
-            if revisao['hash'] == hash_transacao:
-                revisao_encontrada = revisao
-                break
+        # Busca a revisão
+        revisao = revisao_service.buscar_revisao_por_hash(hash_transacao)
 
-        if not revisao_encontrada:
+        if not revisao:
             return jsonify({
                 'success': False,
                 'message': 'Revisão não encontrada'
             })
 
         # Verifica se o responsável existe na lista de donos
-        if responsavel not in revisao_encontrada.get('donos', {}):
+        if responsavel not in revisao.get('donos', {}):
             return jsonify({
                 'success':
                 False,
@@ -1741,22 +1699,25 @@ def atualizar_status_pagamento():
             })
 
         # Inicializa quitacao_individual se não existir
-        if 'quitacao_individual' not in revisao_encontrada:
-            revisao_encontrada['quitacao_individual'] = {}
-            for pessoa in revisao_encontrada.get('donos', {}).keys():
-                revisao_encontrada['quitacao_individual'][pessoa] = False
+        if 'quitacao_individual' not in revisao:
+            revisao['quitacao_individual'] = {}
+            for pessoa in revisao.get('donos', {}).keys():
+                revisao['quitacao_individual'][pessoa] = False
 
         # Atualiza status de quitação individual
-        revisao_encontrada['quitacao_individual'][responsavel] = quitado
+        revisao['quitacao_individual'][responsavel] = quitado
 
         # Atualiza o campo quitado geral (True apenas se todos quitaram)
         todas_quitadas = all(
-            revisao_encontrada['quitacao_individual'].values())
-        revisao_encontrada['quitado'] = todas_quitadas
+            revisao['quitacao_individual'].values())
+        revisao['quitado'] = todas_quitadas
 
-        # Salva arquivo atualizado
-        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
-            json.dump(revisoes, f, ensure_ascii=False, indent=2)
+        # Atualiza no banco
+        revisao_service.atualizar_revisao(
+            hash_transacao,
+            quitacao_individual=revisao['quitacao_individual'],
+            quitado=todas_quitadas
+        )
 
         status_texto = 'quitado' if quitado else 'pendente'
         message = f'Pagamento de {responsavel} marcado como {status_texto} com sucesso!'
@@ -1776,7 +1737,7 @@ def quitar_em_lote():
     Quita múltiplos pagamentos em lote
     """
     try:
-        import json
+        from services.database import RevisaoService
 
         dados = request.get_json()
 
@@ -1790,15 +1751,7 @@ def quitar_em_lote():
         itens = dados['itens']
         quitado = dados.get('quitado', True)
 
-        # Carrega revisões
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return jsonify({
-                'success': False,
-                'message': 'Revisões não encontradas'
-            })
+        revisao_service = RevisaoService()
 
         itens_processados = 0
         erros = []
@@ -1814,12 +1767,8 @@ def quitar_em_lote():
                 )
                 continue
 
-            # Encontra a revisão correspondente
-            revisao_encontrada = None
-            for revisao in revisoes:
-                if revisao['hash'] == hash_transacao:
-                    revisao_encontrada = revisao
-                    break
+            # Busca a revisão correspondente
+            revisao_encontrada = revisao_service.buscar_revisao_por_hash(hash_transacao)
 
             if not revisao_encontrada:
                 erros.append(
@@ -1847,11 +1796,14 @@ def quitar_em_lote():
                 revisao_encontrada['quitacao_individual'].values())
             revisao_encontrada['quitado'] = todas_quitadas
 
-            itens_processados += 1
+            # Atualiza no banco
+            revisao_service.atualizar_revisao(
+                hash_transacao,
+                quitacao_individual=revisao_encontrada['quitacao_individual'],
+                quitado=todas_quitadas
+            )
 
-        # Salva arquivo atualizado
-        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
-            json.dump(revisoes, f, ensure_ascii=False, indent=2)
+            itens_processados += 1
 
         status_texto = 'quitados' if quitado else 'marcados como pendentes'
         message = f'{itens_processados} pagamentos {status_texto} com sucesso!'
@@ -1875,7 +1827,274 @@ def quitar_em_lote():
         })
 
 
+@app.route('/pessoas')
+def pessoas():
+    """
+    Exibe tela de gerenciamento de pessoas
+    """
+    try:
+        from services.database import PessoaService
+
+        pessoa_service = PessoaService()
+        pessoas = pessoa_service.listar_pessoas()
+
+        # Se não há pessoas no banco, faz migração inicial
+        if not pessoas:
+            if pessoa_service.migrar_pessoas_json():
+                pessoas = pessoa_service.listar_pessoas()
+
+        return render_template('pessoas.html', pessoas=pessoas)
+
+    except Exception as e:
+        return f"Erro ao carregar pessoas: {str(e)}", 500
+
+
+@app.route('/salvar_pessoa', methods=['POST'])
+def salvar_pessoa():
+    """
+    Adiciona uma nova pessoa
+    """
+    try:
+        from services.database import PessoaService
+
+        dados = request.get_json()
+
+        # Validações básicas
+        if not dados or not dados.get('nome'):
+            return jsonify({
+                'success': False,
+                'message': 'Nome da pessoa é obrigatório'
+            })
+
+        nome_pessoa = dados['nome'].strip()
+
+        if not nome_pessoa:
+            return jsonify({
+                'success': False,
+                'message': 'Nome da pessoa não pode estar vazio'
+            })
+
+        pessoa_service = PessoaService()
+
+        # Verifica se a pessoa já existe
+        if pessoa_service.pessoa_existe(nome_pessoa):
+            return jsonify({
+                'success': False,
+                'message': 'Esta pessoa já existe'
+            })
+
+        # Adiciona nova pessoa
+        pessoa_service.adicionar_pessoa(nome_pessoa)
+
+        return jsonify({
+            'success': True,
+            'message': 'Pessoa adicionada com sucesso!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao salvar pessoa: {str(e)}'
+        })
+
+
+@app.route('/editar_pessoa', methods=['POST'])
+def editar_pessoa():
+    """
+    Edita uma pessoa existente
+    """
+    try:
+        from services.database import PessoaService
+
+        dados = request.get_json()
+
+        # Validações básicas
+        if not dados or not dados.get('nome_antigo') or not dados.get('nome_novo'):
+            return jsonify({
+                'success': False,
+                'message': 'Nome antigo e novo são obrigatórios'
+            })
+
+        nome_antigo = dados['nome_antigo'].strip()
+        nome_novo = dados['nome_novo'].strip()
+
+        if not nome_novo:
+            return jsonify({
+                'success': False,
+                'message': 'Nome da pessoa não pode estar vazio'
+            })
+
+        pessoa_service = PessoaService()
+
+        # Verifica se a pessoa antiga existe
+        if not pessoa_service.pessoa_existe(nome_antigo):
+            return jsonify({
+                'success': False,
+                'message': 'Pessoa não encontrada'
+            })
+
+        # Verifica se o novo nome já existe (exceto se for o mesmo)
+        if nome_novo != nome_antigo and pessoa_service.pessoa_existe(nome_novo):
+            return jsonify({
+                'success': False,
+                'message': 'Já existe uma pessoa com este nome'
+            })
+
+        # Atualiza a pessoa
+        pessoa_service.editar_pessoa(nome_antigo, nome_novo)
+
+        return jsonify({
+            'success': True,
+            'message': 'Pessoa editada com sucesso!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao editar pessoa: {str(e)}'
+        })
+
+
+@app.route('/excluir_pessoa', methods=['POST'])
+def excluir_pessoa():
+    """
+    Exclui uma pessoa
+    """
+    try:
+        from services.database import PessoaService
+
+        dados = request.get_json()
+
+        # Validações básicas
+        if not dados or not dados.get('nome'):
+            return jsonify({
+                'success': False,
+                'message': 'Nome da pessoa é obrigatório'
+            })
+
+        nome_pessoa = dados['nome'].strip()
+        pessoa_service = PessoaService()
+
+        # Verifica se a pessoa existe
+        if not pessoa_service.pessoa_existe(nome_pessoa):
+            return jsonify({
+                'success': False,
+                'message': 'Pessoa não encontrada'
+            })
+
+        # Remove a pessoa (soft delete)
+        pessoa_service.excluir_pessoa(nome_pessoa)
+
+        return jsonify({
+            'success': True,
+            'message': 'Pessoa excluída com sucesso!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao excluir pessoa: {str(e)}'
+        })
+
+
+@app.route('/limpar_base')
+def limpar_base():
+    """
+    Exibe tela para limpar base de dados
+    """
+    return render_template('limpar_base.html')
+
+
+@app.route('/obter_totais_tabelas')
+def obter_totais_tabelas():
+    """
+    Obtém totais das tabelas para exibir antes da limpeza
+    """
+    try:
+        from services.database import DatabaseService
+
+        db_service = DatabaseService()
+
+        # Consultas para obter totais
+        total_pendentes = db_service.execute_query(
+            "SELECT COUNT(*) as total FROM pendentes WHERE ativo = TRUE", 
+            fetch=True
+        )[0]['total']
+
+        total_revisoes = db_service.execute_query(
+            "SELECT COUNT(*) as total FROM revisoes WHERE ativo = TRUE", 
+            fetch=True
+        )[0]['total']
+
+        total_transacoes = db_service.execute_query(
+            "SELECT COUNT(*) as total FROM transacoes WHERE ativo = TRUE", 
+            fetch=True
+        )[0]['total']
+
+        return jsonify({
+            'success': True,
+            'totais': {
+                'pendentes': total_pendentes,
+                'revisoes': total_revisoes,
+                'transacoes': total_transacoes
+            }
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao obter totais: {str(e)}'
+        })
+
+
+@app.route('/limpar_base_dados', methods=['POST'])
+def limpar_base_dados():
+    """
+    Limpa as tabelas de dados (pendentes, revisões e transações)
+    """
+    try:
+        from services.database import DatabaseService
+
+        dados = request.get_json()
+
+        # Validação do PIN
+        pin_correto = "1234"
+        pin_informado = dados.get('pin', '').strip()
+
+        if not pin_informado:
+            return jsonify({
+                'success': False,
+                'message': 'PIN é obrigatório'
+            })
+
+        if pin_informado != pin_correto:
+            return jsonify({
+                'success': False,
+                'message': 'PIN incorreto. Tente novamente.'
+            })
+
+        db_service = DatabaseService()
+
+        # Executa limpeza das tabelas
+        queries_limpeza = [
+            "UPDATE pendentes SET ativo = FALSE",
+            "UPDATE revisoes SET ativo = FALSE", 
+            "UPDATE transacoes SET ativo = FALSE"
+        ]
+
+        for query in queries_limpeza:
+            db_service.execute_query(query)
+
+        return jsonify({
+            'success': True,
+            'message': 'Base de dados limpa com sucesso! Todas as transações, pendentes e revisões foram removidas.'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro ao limpar base de dados: {str(e)}'
+        })
+
 
 cleanup_temp_files()
-    
-

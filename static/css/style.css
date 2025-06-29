@@ -269,6 +269,105 @@ body {
     }
 }
 
+/* Navbar responsive styles */
+.navbar-toggler {
+    border: none;
+    padding: 0.25rem 0.5rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Tabs customization */
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    border-radius: 0.5rem 0.5rem 0 0;
+    margin-bottom: -2px;
+    border: 2px solid transparent;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    margin-right: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: #e9ecef #e9ecef #dee2e6;
+    background-color: #e9ecef;
+    color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+    background-color: white;
+    border-color: var(--primary-color) var(--primary-color) white;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.tab-content {
+    background-color: white;
+    border: 2px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    padding: 2rem;
+    min-height: 500px;
+}
+
+/* Upload section styling */
+.upload-section {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    border: 1px solid #e9ecef;
+}
+
+/* Responsive adjustments for tabs */
+@media (max-width: 768px) {
+    .nav-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        margin-right: 0.125rem;
+    }
+    
+    .tab-content {
+        padding: 1rem;
+        min-height: 400px;
+    }
+    
+    .upload-section {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .nav-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .nav-tabs .nav-link {
+        flex: 1;
+        text-align: center;
+        margin-right: 0;
+        margin-bottom: 0.25rem;
+        border-radius: 0.375rem;
+    }
+    
+    .tab-content {
+        border-radius: 0.5rem;
+        border-top: 2px solid #dee2e6;
+        margin-top: 0.25rem;
+    }
+}
+
 /* Print styles */
 @media print {
     .no-print {

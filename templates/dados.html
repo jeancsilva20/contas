@@ -1,0 +1,225 @@
+
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Dados - Sistema de Gestão de Contas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-database me-2"></i>
+                    Gerenciar Dados
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs mb-4" id="dadosTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-pane" type="button" role="tab" aria-controls="upload-pane" aria-selected="true">
+                            <i class="bi bi-upload me-2"></i>Upload
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="fontes-tab" data-bs-toggle="tab" data-bs-target="#fontes-pane" type="button" role="tab" aria-controls="fontes-pane" aria-selected="false">
+                            <i class="bi bi-gear me-2"></i>Fontes
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pessoas-tab" data-bs-toggle="tab" data-bs-target="#pessoas-pane" type="button" role="tab" aria-controls="pessoas-pane" aria-selected="false">
+                            <i class="bi bi-people me-2"></i>Pessoas
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="limpar-tab" data-bs-toggle="tab" data-bs-target="#limpar-pane" type="button" role="tab" aria-controls="limpar-pane" aria-selected="false">
+                            <i class="bi bi-trash3 me-2"></i>Limpar Base
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tabs Content -->
+                <div class="tab-content" id="dadosTabsContent">
+                    <!-- Upload Tab -->
+                    <div class="tab-pane fade show active" id="upload-pane" role="tabpanel" aria-labelledby="upload-tab">
+                        <div id="upload-content">
+                            <!-- Conteúdo será carregado via AJAX -->
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Carregando...</span>
+                                </div>
+                                <p class="mt-2">Carregando conteúdo...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fontes Tab -->
+                    <div class="tab-pane fade" id="fontes-pane" role="tabpanel" aria-labelledby="fontes-tab">
+                        <div id="fontes-content">
+                            <!-- Conteúdo será carregado via AJAX -->
+                        </div>
+                    </div>
+
+                    <!-- Pessoas Tab -->
+                    <div class="tab-pane fade" id="pessoas-pane" role="tabpanel" aria-labelledby="pessoas-tab">
+                        <div id="pessoas-content">
+                            <!-- Conteúdo será carregado via AJAX -->
+                        </div>
+                    </div>
+
+                    <!-- Limpar Base Tab -->
+                    <div class="tab-pane fade" id="limpar-pane" role="tabpanel" aria-labelledby="limpar-tab">
+                        <div id="limpar-content">
+                            <!-- Conteúdo será carregado via AJAX -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Carregar conteúdo inicial (Upload)
+    carregarConteudo('upload');
+    
+    // Handler para mudança de tabs
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        var targetTab = e.target.getAttribute('data-bs-target');
+        var tabName = targetTab.replace('#', '').replace('-pane', '');
+        carregarConteudo(tabName);
+    });
+    
+    function carregarConteudo(tab) {
+        var contentDiv = '#' + tab + '-content';
+        var url = '/' + tab;
+        
+        // Correção para a URL da tab limpar
+        if (tab === 'limpar') {
+            url = '/limpar_base';
+        }
+        
+        // Se o conteúdo já foi carregado, não recarrega
+        if ($(contentDiv).data('loaded')) {
+            return;
+        }
+        
+        // Mostra loading
+        $(contentDiv).html(`
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-2">Carregando conteúdo...</p>
+            </div>
+        `);
+        
+        // Carrega conteúdo via AJAX
+        $.get(url + '_content')
+            .done(function(data) {
+                $(contentDiv).html(data);
+                $(contentDiv).data('loaded', true);
+                
+                // Reinicializa componentes específicos de cada tab
+                if (tab === 'upload') {
+                    inicializarUpload();
+                } else if (tab === 'fontes') {
+                    inicializarFontes();
+                } else if (tab === 'pessoas') {
+                    inicializarPessoas();
+                } else if (tab === 'limpar') {
+                    inicializarLimparBase();
+                }
+            })
+            .fail(function() {
+                $(contentDiv).html(`
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Erro ao carregar conteúdo. Tente novamente.
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="carregarConteudo('${tab}')">
+                            <i class="bi bi-arrow-clockwise"></i> Tentar Novamente
+                        </button>
+                    </div>
+                `);
+            });
+    }
+    
+    // Funções para inicializar componentes específicos
+    function inicializarUpload() {
+        // Reinicializa funcionalidades do upload
+        if (typeof initializeUploadHandlers === 'function') {
+            initializeUploadHandlers();
+        }
+    }
+    
+    function inicializarFontes() {
+        // Reinicializa DataTable para fontes
+        if ($.fn.DataTable.isDataTable('#tabelaFontes')) {
+            $('#tabelaFontes').DataTable().destroy();
+        }
+        $('#tabelaFontes').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
+            }
+        });
+    }
+    
+    function inicializarPessoas() {
+        // Reinicializa DataTable para pessoas
+        if ($.fn.DataTable.isDataTable('#tabelaPessoas')) {
+            $('#tabelaPessoas').DataTable().destroy();
+        }
+        $('#tabelaPessoas').DataTable({
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
+            }
+        });
+    }
+    
+    function inicializarLimparBase() {
+        // Funcionalidades específicas da tela de limpar base
+        if (typeof initializeLimparBase === 'function') {
+            initializeLimparBase();
+        }
+    }
+    
+    // Torna a função disponível globalmente para uso nos botões
+    window.carregarConteudo = carregarConteudo;
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nav-tabs .nav-link {
+        border-radius: 0.375rem 0.375rem 0 0;
+        margin-bottom: -1px;
+        border: 1px solid transparent;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: var(--bs-gray-200) var(--bs-gray-200) var(--bs-border-color);
+        background-color: var(--bs-gray-100);
+    }
+    
+    .nav-tabs .nav-link.active {
+        background-color: white;
+        border-color: var(--bs-gray-300) var(--bs-gray-300) white;
+        color: var(--primary-color);
+    }
+    
+    .tab-content {
+        min-height: 400px;
+    }
+    
+    .spinner-border {
+        width: 2rem;
+        height: 2rem;
+    }
+</style>
+{% endblock %}

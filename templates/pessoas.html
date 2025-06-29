@@ -1,0 +1,328 @@
+
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Pessoas - Sistema de Gestão de Contas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-people me-2"></i>
+                    Gerenciar Pessoas
+                </h5>
+                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNovaPessoa">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Nova Pessoa
+                </button>
+            </div>
+            <div class="card-body">
+                {% if pessoas %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="tabelaPessoas">
+                        <thead>
+                            <tr>
+                                <th>Nome da Pessoa</th>
+                                <th width="150">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pessoa in pessoas %}
+                            <tr>
+                                <td>{{ pessoa }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-primary btn-sm editar-btn" 
+                                                data-pessoa="{{ pessoa }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalEditarPessoa"
+                                                title="Editar pessoa">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-sm excluir-btn"
+                                                data-pessoa="{{ pessoa }}"
+                                                title="Excluir pessoa">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">Nenhuma pessoa cadastrada</h5>
+                    <p class="text-muted">Clique em "Nova Pessoa" para adicionar a primeira pessoa.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Pessoa -->
+<div class="modal fade" id="modalNovaPessoa" tabindex="-1" aria-labelledby="modalNovaPessoaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNovaPessoaLabel">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Nova Pessoa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovaPessoa">
+                    <div class="mb-3">
+                        <label for="nomeNovaPessoa" class="form-label">Nome da Pessoa</label>
+                        <input type="text" class="form-control" id="nomeNovaPessoa" required maxlength="100">
+                        <div class="form-text">Ex: João Silva, Maria Santos, etc.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnSalvarNovaPessoa">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Salvar Pessoa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Pessoa -->
+<div class="modal fade" id="modalEditarPessoa" tabindex="-1" aria-labelledby="modalEditarPessoaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditarPessoaLabel">
+                    <i class="bi bi-pencil me-2"></i>
+                    Editar Pessoa
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarPessoa">
+                    <input type="hidden" id="pessoaAntigaEdit">
+                    <div class="mb-3">
+                        <label for="nomeEditarPessoa" class="form-label">Nome da Pessoa</label>
+                        <input type="text" class="form-control" id="nomeEditarPessoa" required maxlength="100">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarEdicaoPessoa">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializa DataTable
+    $('#tabelaPessoas').DataTable({
+        responsive: true,
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
+        },
+        pageLength: 25,
+        order: [[0, 'asc']]
+    });
+
+    // Salvar nova pessoa
+    $('#btnSalvarNovaPessoa').click(function() {
+        salvarNovaPessoa();
+    });
+
+    // Salvar edição de pessoa
+    $('#btnSalvarEdicaoPessoa').click(function() {
+        salvarEdicaoPessoa();
+    });
+
+    // Botão editar
+    $(document).on('click', '.editar-btn', function() {
+        const pessoa = $(this).data('pessoa');
+        $('#pessoaAntigaEdit').val(pessoa);
+        $('#nomeEditarPessoa').val(pessoa);
+    });
+
+    // Botão excluir
+    $(document).on('click', '.excluir-btn', function() {
+        const pessoa = $(this).data('pessoa');
+        excluirPessoa(pessoa);
+    });
+
+    // Submit no formulário nova pessoa
+    $('#formNovaPessoa').submit(function(e) {
+        e.preventDefault();
+        salvarNovaPessoa();
+    });
+
+    // Submit no formulário editar pessoa
+    $('#formEditarPessoa').submit(function(e) {
+        e.preventDefault();
+        salvarEdicaoPessoa();
+    });
+});
+
+function salvarNovaPessoa() {
+    const nome = $('#nomeNovaPessoa').val().trim();
+
+    if (!nome) {
+        Notiflix.Notify.warning('Por favor, informe o nome da pessoa');
+        return;
+    }
+
+    const btn = $('#btnSalvarNovaPessoa');
+    btn.prop('disabled', true);
+    btn.html('<span class="spinner-border spinner-border-sm me-1"></span>Salvando...');
+
+    Notiflix.Loading.circle('Salvando pessoa...');
+
+    fetch('/salvar_pessoa', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            nome: nome
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        Notiflix.Loading.remove();
+
+        if (data.success) {
+            Notiflix.Notify.success('Pessoa adicionada com sucesso!');
+
+            // Fechar modal
+            const modalElement = document.getElementById('modalNovaPessoa');
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            modal.hide();
+
+            // Recarregar página
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            Notiflix.Notify.failure(data.message || 'Erro ao salvar pessoa');
+        }
+    })
+    .catch(error => {
+        Notiflix.Loading.remove();
+        Notiflix.Notify.failure('Erro ao salvar pessoa: ' + error.message);
+    })
+    .finally(() => {
+        btn.prop('disabled', false);
+        btn.html('<i class="bi bi-check-circle me-1"></i>Salvar Pessoa');
+    });
+}
+
+function salvarEdicaoPessoa() {
+    const nomeAntigo = $('#pessoaAntigaEdit').val();
+    const nomeNovo = $('#nomeEditarPessoa').val().trim();
+
+    if (!nomeNovo) {
+        Notiflix.Notify.warning('Por favor, informe o nome da pessoa');
+        return;
+    }
+
+    const btn = $('#btnSalvarEdicaoPessoa');
+    btn.prop('disabled', true);
+    btn.html('<span class="spinner-border spinner-border-sm me-1"></span>Salvando...');
+
+    Notiflix.Loading.circle('Salvando alterações...');
+
+    fetch('/editar_pessoa', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            nome_antigo: nomeAntigo,
+            nome_novo: nomeNovo
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        Notiflix.Loading.remove();
+
+        if (data.success) {
+            Notiflix.Notify.success('Pessoa editada com sucesso!');
+
+            // Fechar modal
+            const modalElement = document.getElementById('modalEditarPessoa');
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            modal.hide();
+
+            // Recarregar página
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            Notiflix.Notify.failure(data.message || 'Erro ao editar pessoa');
+        }
+    })
+    .catch(error => {
+        Notiflix.Loading.remove();
+        Notiflix.Notify.failure('Erro ao editar pessoa: ' + error.message);
+    })
+    .finally(() => {
+        btn.prop('disabled', false);
+        btn.html('<i class="bi bi-check-circle me-1"></i>Salvar Alterações');
+    });
+}
+
+function excluirPessoa(pessoa) {
+    Notiflix.Confirm.show(
+        'Confirmar Exclusão',
+        `Tem certeza que deseja excluir a pessoa "${pessoa}"?`,
+        'Sim, Excluir',
+        'Cancelar',
+        function() {
+            Notiflix.Loading.circle('Excluindo pessoa...');
+
+            fetch('/excluir_pessoa', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    nome: pessoa
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                Notiflix.Loading.remove();
+
+                if (data.success) {
+                    Notiflix.Notify.success('Pessoa excluída com sucesso!');
+
+                    // Recarregar página
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    Notiflix.Notify.failure(data.message || 'Erro ao excluir pessoa');
+                }
+            })
+            .catch(error => {
+                Notiflix.Loading.remove();
+                Notiflix.Notify.failure('Erro ao excluir pessoa: ' + error.message);
+            });
+        }
+    );
+}
+</script>
+{% endblock %}

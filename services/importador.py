@@ -1,4 +1,3 @@
-
 import pandas as pd
 import os
 import json
@@ -11,289 +10,299 @@ class ImportadorTransacoes:
         self.dados_processados = []
         self.novas_transacoes = 0
         self.pendentes_adicionadas = 0
+        # Cache para melhorar performance
+        self._cache_transacoes_existentes = set()
+        self._cache_revisoes_existentes = set()
+        self._cache_pendentes_existentes = set()
+
+    def _inicializar_cache(self):
+        """Inicializa cache com dados existentes para evitar consultas repetidas"""
+        try:
+            from services.database import TransacaoService, RevisaoService, PendenteService
+
+            # Cache de transações existentes
+            transacao_service = TransacaoService()
+            transacoes = transacao_service.listar_transacoes()
+            self._cache_transacoes_existentes = {t.get('hash') for t in transacoes if t.get('hash')}
+
+            # Cache de revisões existentes
+            revisao_service = RevisaoService()
+            revisoes = revisao_service.listar_revisoes()
+            self._cache_revisoes_existentes = {r.get('hash') for r in revisoes if r.get('hash')}
+
+            # Cache de pendentes existentes
+            pendente_service = PendenteService()
+            pendentes = pendente_service.listar_pendentes()
+            self._cache_pendentes_existentes = {p.get('hash') for p in pendentes if p.get('hash')}
+
+        except Exception as e:
+            print(f"Erro ao inicializar cache: {e}")
+
+    def _converter_valor_brasileiro(self, valor_str):
+        """
+        Converte valores monetários do formato brasileiro para float
+        Versão otimizada com validações mais rápidas
+        """
+        if not valor_str:
+            return 0.0
+
+        # Conversão rápida para string e verificações básicas
+        valor_str = str(valor_str).strip()
+        if not valor_str or valor_str.lower() in ['nan', '', 'nat', 'none']:
+            return 0.0
+
+        try:
+            # Remove prefixos monetários de uma vez
+            valor_str = valor_str.replace('"', '').replace('R$', '').replace('$ ', '').strip()
+
+            if not valor_str:
+                return 0.0
+
+            # Detecção otimizada de formato
+            if ',' in valor_str and '.' in valor_str:
+                # Verifica qual é o último separador decimal
+                ultimo_ponto = valor_str.rfind('.')
+                ultima_virgula = valor_str.rfind(',')
+
+                if ultimo_ponto < ultima_virgula:
+                    # Formato brasileiro: 1.234,56
+                    valor_str = valor_str.replace('.', '').replace(',', '.')
+                else:
+                    # Formato americano: 1,234.56
+                    valor_str = valor_str.replace(',', '')
+            elif ',' in valor_str:
+                # Só vírgula - formato decimal brasileiro simples
+                valor_str = valor_str.replace(',', '.')
+
+            return float(valor_str)
+
+        except (ValueError, TypeError):
+            return 0.0
+
+    def _detectar_separador(self, arquivo, encoding):
+        """
+        Detecta automaticamente o separador do CSV de forma mais eficiente
+        """
+        if hasattr(arquivo, 'seek'):
+            arquivo.seek(0)
+
+        # Lê apenas os primeiros 512 bytes para detectar separador
+        chunk = arquivo.read(512)
+        if hasattr(arquivo, 'seek'):
+            arquivo.seek(0)
+
+        # Decodifica se necessário
+        if isinstance(chunk, bytes):
+            chunk = chunk.decode(encoding, errors='ignore')
+
+        # Conta separadores apenas na primeira linha
+        primeira_linha = chunk.split('\n')[0]
+        virgulas = primeira_linha.count(',')
+        pontos_virgulas = primeira_linha.count(';')
+
+        return ',' if virgulas > pontos_virgulas else ';'
 
     def verificar_colunas(self, arquivo):
         """
         Verifica se as colunas obrigatórias estão presentes no CSV.
-        Retorna as colunas encontradas e um validador.
+        Versão otimizada com menos tentativas de encoding.
         """
         colunas_obrigatorias = [
-            'Data de compra', 
-            'Nome no cartão', 
-            'Final do Cartão', 
-            'Categoria', 
-            'Descrição', 
-            'Parcela', 
-            'Valor (em R$)',
-            'Valor Recebido (em R$)'
+            'Data de compra', 'Nome no cartão', 'Final do Cartão', 'Categoria', 
+            'Descrição', 'Parcela', 'Valor (em R$)', 'Valor Recebido (em R$)'
         ]
 
         try:
-            # Tenta diferentes codificações
-            encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+            # Ordem otimizada de encodings (mais comuns primeiro)
+            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
             df = None
-            
+
             for encoding in encodings:
                 try:
-                    # Reset do arquivo se for um objeto de arquivo
                     if hasattr(arquivo, 'seek'):
                         arquivo.seek(0)
-                    
-                    # Lê apenas o cabeçalho do CSV
-                    df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding, nrows=0)
+
+                    separador = self._detectar_separador(arquivo, encoding)
+
+                    # Lê apenas o cabeçalho (mais eficiente)
+                    df = pd.read_csv(arquivo, sep=separador, decimal=',', 
+                                   encoding=encoding, nrows=0)
                     break
-                except UnicodeDecodeError:
+                except (UnicodeDecodeError, pd.errors.EmptyDataError):
                     continue
-            
+
             if df is None:
                 raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
-            
+
             colunas_encontradas = df.columns.tolist()
-            
-            # Reset do arquivo se for um objeto de arquivo
+
             if hasattr(arquivo, 'seek'):
                 arquivo.seek(0)
-            
-            # Verifica se todas as colunas obrigatórias estão presentes
-            for coluna in colunas_obrigatorias:
-                if coluna not in colunas_encontradas:
-                    return colunas_encontradas, False, colunas_obrigatorias
-            
-            return colunas_encontradas, True, colunas_obrigatorias
-        
+
+            # Verificação otimizada
+            colunas_faltantes = set(colunas_obrigatorias) - set(colunas_encontradas)
+            return colunas_encontradas, len(colunas_faltantes) == 0, colunas_obrigatorias
+
         except Exception as e:
             raise Exception(f"Erro ao verificar colunas: {str(e)}")
 
     def processar_arquivo(self, arquivo, fonte='Não informado'):
-        """
-        Processa arquivo CSV e extrai transações
-        """
+        """Processa arquivo CSV e extrai transações"""
         try:
-            # Verifica se é CSV
             nome_arquivo = arquivo.filename.lower()
             if not nome_arquivo.endswith('.csv'):
                 raise ValueError("Apenas arquivos CSV são suportados")
 
             return self._processar_csv(arquivo, fonte)
-
         except Exception as e:
             raise Exception(f"Erro ao processar arquivo: {str(e)}")
 
     def processar_arquivo_com_mapeamento(self, arquivo, mapeamento, fonte='Não informado'):
-        """
-        Processa arquivo CSV com mapeamento de colunas personalizado
-        """
+        """Processa arquivo CSV com mapeamento de colunas personalizado"""
         try:
-            # Tenta diferentes codificações
-            encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+            # Inicializa cache
+            self._inicializar_cache()
+            print(f"🔄 Cache inicializado - Transações existentes: {len(self._cache_transacoes_existentes)}")
+
+            # Ordem otimizada de encodings
+            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
             df = None
-            
+
             for encoding in encodings:
                 try:
-                    # Reset do arquivo se for um objeto de arquivo
                     if hasattr(arquivo, 'seek'):
                         arquivo.seek(0)
-                    
-                    # Lê o CSV
-                    df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding)
+
+                    separador = self._detectar_separador(arquivo, encoding)
+                    df = pd.read_csv(arquivo, sep=separador, decimal=',', encoding=encoding)
                     break
-                except UnicodeDecodeError:
+                except (UnicodeDecodeError, pd.errors.EmptyDataError):
                     continue
-            
+
             if df is None:
                 raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
-            
-            # Aplica o mapeamento de colunas
+
             df_mapeado = self._aplicar_mapeamento(df, mapeamento)
-            
-            # Processa as transações com o DataFrame mapeado
             return self._extrair_transacoes_cartao(df_mapeado, fonte)
 
         except Exception as e:
             raise Exception(f"Erro ao processar arquivo com mapeamento: {str(e)}")
 
     def _aplicar_mapeamento(self, df, mapeamento):
-        """
-        Aplica o mapeamento de colunas ao DataFrame
-        """
-        df_novo = pd.DataFrame()
-        
+        """Aplica o mapeamento de colunas ao DataFrame de forma otimizada"""
+        df_novo = pd.DataFrame(index=df.index)  # Mantém mesmo índice
+
+        # Valores padrão definidos uma vez
+        valores_padrao = {
+            'Valor (em R$)': 0.0,
+            'Data de compra': '01/01/1900'
+        }
+
         for coluna_obrigatoria, coluna_csv in mapeamento.items():
             if coluna_csv == "DEIXAR_EM_BRANCO":
-                # Define valores padrão baseado no tipo da coluna
-                if coluna_obrigatoria == 'Valor (em R$)':
-                    df_novo[coluna_obrigatoria] = 0.0
-                elif coluna_obrigatoria in ['Data de compra']:
-                    df_novo[coluna_obrigatoria] = '01/01/1900'
-                else:
-                    df_novo[coluna_obrigatoria] = ''
+                valor_padrao = valores_padrao.get(coluna_obrigatoria, '')
+                df_novo[coluna_obrigatoria] = valor_padrao
             else:
-                # Usa a coluna mapeada do CSV original
                 if coluna_csv in df.columns:
                     df_novo[coluna_obrigatoria] = df[coluna_csv]
                 else:
-                    # Fallback para valor padrão se a coluna não existir
-                    if coluna_obrigatoria == 'Valor (em R$)':
-                        df_novo[coluna_obrigatoria] = 0.0
-                    elif coluna_obrigatoria in ['Data de compra']:
-                        df_novo[coluna_obrigatoria] = '01/01/1900'
-                    else:
-                        df_novo[coluna_obrigatoria] = ''
-        
+                    valor_padrao = valores_padrao.get(coluna_obrigatoria, '')
+                    df_novo[coluna_obrigatoria] = valor_padrao
+
         return df_novo
 
     def _processar_csv(self, arquivo, fonte='Não informado'):
-        """
-        Processa arquivo CSV do cartão de crédito com novo padrão
-        """
+        """Processa arquivo CSV do cartão de crédito com otimizações"""
         try:
-            # Tenta diferentes codificações
-            encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+            # Inicializa cache
+            self._inicializar_cache()
+            print(f"🔄 Cache inicializado - Transações existentes: {len(self._cache_transacoes_existentes)}")
+
+            # Ordem otimizada de encodings
+            encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
             df = None
-            
+
             for encoding in encodings:
                 try:
-                    # Reset do arquivo se for um objeto de arquivo
                     if hasattr(arquivo, 'seek'):
                         arquivo.seek(0)
-                    
-                    # Lê o CSV com separador ponto e vírgula e decimal vírgula
-                    df = pd.read_csv(arquivo, sep=';', decimal=',', encoding=encoding)
+
+                    separador = self._detectar_separador(arquivo, encoding)
+                    df = pd.read_csv(arquivo, sep=separador, decimal=',', encoding=encoding)
                     break
-                except UnicodeDecodeError:
+                except (UnicodeDecodeError, pd.errors.EmptyDataError):
                     continue
-            
+
             if df is None:
                 raise Exception("Não foi possível ler o arquivo com as codificações suportadas")
 
-            # Processa as transações
             return self._extrair_transacoes_cartao(df, fonte)
 
         except Exception as e:
             raise Exception(f"Erro ao processar CSV: {str(e)}")
 
     def _extrair_transacoes_cartao(self, df, fonte='Não informado'):
-        """
-        Extrai transações do CSV do cartão de crédito - novo padrão
-        """
+        """Extrai transações do CSV de forma otimizada"""
         transacoes = []
 
-        # Define colunas obrigatórias
+        # Verifica colunas obrigatórias uma vez
         colunas_obrigatorias = [
-            'Data de compra', 
-            'Nome no cartão', 
-            'Final do Cartão', 
-            'Categoria', 
-            'Descrição', 
-            'Parcela', 
-            'Valor (em R$)',
-            'Valor Recebido (em R$)'
+            'Data de compra', 'Nome no cartão', 'Final do Cartão', 'Categoria', 
+            'Descrição', 'Parcela', 'Valor (em R$)', 'Valor Recebido (em R$)'
         ]
-        
-        # Verifica se as colunas obrigatórias existem
-        colunas_df = df.columns.tolist()
-        for coluna in colunas_obrigatorias:
-            if coluna not in colunas_df:
-                raise ValueError(f"Coluna obrigatória '{coluna}' não encontrada no arquivo")
+
+        colunas_faltantes = set(colunas_obrigatorias) - set(df.columns)
+        if colunas_faltantes:
+            raise ValueError(f"Colunas obrigatórias não encontradas: {', '.join(colunas_faltantes)}")
+
+        # Remove linhas vazias antecipadamente
+        df = df.dropna(subset=['Data de compra', 'Descrição'])
+
+        # Processa em lotes para melhor performance
+        timestamp_base = int(datetime.now().timestamp())
 
         for index, row in df.iterrows():
             try:
-                # Extrai e valida data
+                # Validação rápida de data
                 data_str = str(row['Data de compra']).strip()
                 if not data_str or data_str.lower() in ['nan', '', 'nat']:
                     continue
 
-                # Converte data do formato DD/MM/YYYY
-                data = datetime.strptime(data_str, '%d/%m/%Y')
-
-                # Extrai e valida descrição
+                # Validação rápida de descrição
                 descricao = str(row['Descrição']).strip()
                 if not descricao or descricao.lower() in ['nan', '']:
                     continue
 
-                # Extrai e valida valor
-                valor_str = str(row['Valor (em R$)']).strip()
-                valor_recebido_str = str(row.get('Valor Recebido (em R$)', '')).strip()
-                
-                valor = 0
-                valor_recebido = 0
-                tipo_movimento = 'saida'  # Padrão para cartão
-                
-                # Processa valor de saída
-                if valor_str and valor_str.lower() not in ['nan', '']:
-                    valor_str = valor_str.replace('"', '')
-                    valor = float(valor_str)
-                
-                # Processa valor recebido (estornos)
-                if valor_recebido_str and valor_recebido_str.lower() not in ['nan', '']:
-                    valor_recebido_str = valor_recebido_str.replace('"', '')
-                    valor_recebido = float(valor_recebido_str)
-                
-                # Aplica regras para determinar tipo de movimento e valor final
-                tipo_movimento = 'saida'  # Padrão
-                valor_final = 0
-                
-                if valor_recebido == 0 and valor < 0:
-                    # Regra: Valor Recebido = 0 e Valor < 0 = Entrada
-                    tipo_movimento = 'entrada'
-                    valor_final = abs(valor)  # Valor absoluto para cálculos internos
-                elif valor == 0 and valor_recebido > 0:
-                    # Regra: Valor = 0 e Valor Recebido > 0 = Entrada
-                    tipo_movimento = 'entrada'
-                    valor_final = valor_recebido
-                elif valor > 0 and valor_recebido == 0:
-                    # Regra: Valor > 0 e Valor Recebido = 0 = Saída
-                    tipo_movimento = 'saida'
-                    valor_final = valor
-                elif valor_recebido > 0:
-                    # Valor recebido tem prioridade (entrada)
-                    tipo_movimento = 'entrada'
-                    valor_final = valor_recebido
-                else:
-                    # Saída normal
-                    tipo_movimento = 'saida'
-                    valor_final = abs(valor)
+                # Conversão otimizada de data
+                try:
+                    data = datetime.strptime(data_str, '%d/%m/%Y')
+                except ValueError:
+                    continue
 
-                # Pula valores zerados
+                # Conversão otimizada de valores
+                valor = self._converter_valor_brasileiro(row['Valor (em R$)'])
+                valor_recebido = self._converter_valor_brasileiro(row.get('Valor Recebido (em R$)', ''))
+
+                # Determina tipo de movimento e valor final
+                tipo_movimento, valor_final = self._determinar_tipo_movimento(valor, valor_recebido)
+
                 if valor_final == 0:
                     continue
 
-                # Extrai informações adicionais
-                nome_cartao = str(row['Nome no cartão']).strip()
-                final_cartao = str(row['Final do Cartão']).strip()
-                categoria = str(row['Categoria']).strip()
-                parcela = str(row['Parcela']).strip()
-
-                # Monta observações
-                observacoes = []
-                
-                if parcela and parcela.lower() not in ['nan', '']:
-                    observacoes.append(f"Parcela: {parcela}")
-                
-                if categoria and categoria.lower() not in ['nan', '']:
-                    observacoes.append(f"Categoria: {categoria}")
-                
-                if nome_cartao and nome_cartao.lower() not in ['nan', '']:
-                    observacoes.append(f"Cartão: {nome_cartao}")
-                
-                if final_cartao and final_cartao.lower() not in ['nan', '']:
-                    observacoes.append(f"Final: {final_cartao}")
-
-                observacoes_str = ' | '.join(observacoes) if observacoes else ''
-
-                # Gera hash único para identificar duplicatas
+                # Gera hash e verifica duplicata usando cache
                 hash_transacao = gerar_hash_transacao(data, descricao, valor_final, 'cartao')
-
-                # Verifica se transação já existe
-                if transacao_existe(hash_transacao):
+                if hash_transacao in self._cache_transacoes_existentes:
                     continue
 
-                # Para entradas, o valor deve ser negativo para exibição
+                # Monta observações de forma otimizada
+                observacoes_str = self._montar_observacoes(row)
+
+                # Valor para armazenamento
                 valor_para_armazenar = -valor_final if tipo_movimento == 'entrada' else valor_final
-                
-                # Cria objeto de transação
+
+                # Cria transação
                 transacao = {
-                    'id': f"cartao_{int(datetime.now().timestamp())}_{len(transacoes)}",
+                    'id': f"cartao_{timestamp_base}_{len(transacoes)}",
                     'tipo': 'cartao',
                     'data': data.strftime('%Y-%m-%d'),
                     'descricao': descricao,
@@ -303,71 +312,181 @@ class ImportadorTransacoes:
                     'hash': hash_transacao,
                     'observacoes': observacoes_str
                 }
-
+                
                 transacoes.append(transacao)
+                
+                # Log a cada 10 transações processadas
+                if len(transacoes) % 10 == 0:
+                    print(f"📊 {len(transacoes)} transações processadas...")
+                # Atualiza cache
+                self._cache_transacoes_existentes.add(hash_transacao)
 
-            except ValueError as e:
-                # Erro de conversão de data ou valor - pula linha
-                print(f"Erro ao processar linha {index}: {str(e)}")
-                continue
             except Exception as e:
-                # Outros erros - pula linha mas continua
-                print(f"Erro inesperado na linha {index}: {str(e)}")
+                # Log do erro sem interromper processamento
+                print(f"Erro na linha {index}: {str(e)}")
                 continue
 
         return transacoes
 
+    def _determinar_tipo_movimento(self, valor, valor_recebido):
+        """Determina tipo de movimento de forma otimizada"""
+        if valor_recebido == 0 and valor < 0:
+            return 'entrada', abs(valor)
+        elif valor == 0 and valor_recebido > 0:
+            return 'entrada', valor_recebido
+        elif valor > 0 and valor_recebido == 0:
+            return 'saida', valor
+        elif valor_recebido > 0:
+            return 'entrada', valor_recebido
+        else:
+            return 'saida', abs(valor)
+
+    def _montar_observacoes(self, row):
+        """Monta observações de forma otimizada"""
+        observacoes = []
+
+        # Campos e suas labels
+        campos = [
+            ('Parcela', 'Parcela'),
+            ('Categoria', 'Categoria'),
+            ('Nome no cartão', 'Cartão'),
+            ('Final do Cartão', 'Final')
+        ]
+
+        for campo, label in campos:
+            valor = str(row.get(campo, '')).strip()
+            if valor and valor.lower() not in ['nan', '']:
+                observacoes.append(f"{label}: {valor}")
+
+        return ' | '.join(observacoes)
+
     def salvar_transacoes(self, transacoes):
-        """
-        Salva transações nos arquivos apropriados
-        """
+        """Salva transações no banco de dados usando processamento em lotes otimizado"""
         if not transacoes:
+            print("⚠️ Nenhuma transação para salvar")
             return
 
-        # Garante que o diretório data existe
-        os.makedirs('data', exist_ok=True)
+        from services.database import TransacaoService
 
-        # Carrega transações existentes
-        transacoes_existentes = self._carregar_json('data/transacoes.json')
+        transacao_service = TransacaoService()
+        novas_transacoes_count = 0
 
-        # Adiciona novas transações
-        transacoes_existentes.extend(transacoes)
-        self.novas_transacoes = len(transacoes)
+        print(f"💾 Iniciando salvamento de {len(transacoes)} transações...")
 
-        # Salva transações atualizadas
-        self._salvar_json('data/transacoes.json', transacoes_existentes)
+        # Processa em lotes de 10 transações para evitar sobrecarga
+        batch_size = 10
+        total_batches = (len(transacoes) + batch_size - 1) // batch_size
+        
+        for i in range(0, len(transacoes), batch_size):
+            batch_num = (i // batch_size) + 1
+            batch = transacoes[i:i + batch_size]
+            
+            print(f"📦 Processando lote {batch_num}/{total_batches} ({len(batch)} transações)...")
+            
+            try:
+                # Valida estrutura do lote antes de enviar
+                for j, transacao in enumerate(batch):
+                    if not isinstance(transacao, dict):
+                        print(f"❌ Erro: Item {j} do lote {batch_num} não é um dicionário")
+                        continue
+                    
+                    required_fields = ['id', 'tipo', 'data', 'descricao', 'valor', 'tipo_movimento', 'fonte', 'hash']
+                    missing_fields = [field for field in required_fields if field not in transacao]
+                    
+                    if missing_fields:
+                        print(f"❌ Erro: Item {j} do lote {batch_num} tem campos faltantes: {missing_fields}")
+                        continue
+                
+                # Envia lote para o banco
+                transacao_service.adicionar_transacoes_lote(batch)
+                novas_transacoes_count += len(batch)
+                print(f"✅ Lote {batch_num}/{total_batches} processado com sucesso")
+                
+            except Exception as e:
+                print(f"❌ Erro ao processar lote {batch_num}: {e}")
+                # Continua com próximo lote mesmo se um falhar
+                continue
 
-        # Processa pendentes para revisão
+        self.novas_transacoes = novas_transacoes_count
+        print(f"💾 Salvamento concluído. Total processado: {novas_transacoes_count} transações")
+        
+        # Processa pendentes após salvamento bem-sucedido
         self._processar_pendentes(transacoes)
 
     def _processar_pendentes(self, transacoes):
-        """
-        Adiciona transações de saída aos pendentes para categorização
-        """
-        # Carrega revisões existentes para verificar o que já foi revisado
-        revisoes = self._carregar_json('data/revisoes.json')
-        hashes_revisados = {r.get('hash') for r in revisoes if r.get('hash')}
+        """Adiciona transações aos pendentes usando cache com processamento otimizado"""
+        from services.database import PendenteService
 
-        # Carrega pendentes existentes
-        pendentes = self._carregar_json('data/pendentes.json')
-        hashes_pendentes = {p.get('hash') for p in pendentes if p.get('hash')}
+        pendente_service = PendenteService()
+        novas_pendentes = []
 
-        # Filtra transações (saídas e entradas) que não foram revisadas e não estão nos pendentes
-        novas_pendentes = [
-            t for t in transacoes 
-            if (t['hash'] not in hashes_revisados and 
-                t['hash'] not in hashes_pendentes)
-        ]
+        print(f"🔄 Verificando {len(transacoes)} transações para pendentes...")
 
+        # Filtra usando cache
+        for i, transacao in enumerate(transacoes):
+            try:
+                hash_transacao = transacao.get('hash')
+                if not hash_transacao:
+                    print(f"⚠️ Transação {i} sem hash, pulando...")
+                    continue
+                    
+                if (hash_transacao not in self._cache_revisoes_existentes and 
+                    hash_transacao not in self._cache_pendentes_existentes):
+                    novas_pendentes.append(transacao)
+                    print(f"➕ Transação {i} adicionada aos pendentes")
+                else:
+                    print(f"⏭️ Transação {i} já existe em revisões ou pendentes")
+                    
+            except Exception as e:
+                print(f"❌ Erro ao processar transação {i} para pendentes: {e}")
+                continue
+
+        # Processa pendentes em lotes menores
         if novas_pendentes:
-            pendentes.extend(novas_pendentes)
+            print(f"📋 Processando {len(novas_pendentes)} novas transações pendentes...")
+            
+            batch_size = 10  # Reduzido para evitar sobrecarga
+            total_batches = (len(novas_pendentes) + batch_size - 1) // batch_size
+            
+            for i in range(0, len(novas_pendentes), batch_size):
+                batch_num = (i // batch_size) + 1
+                batch = novas_pendentes[i:i + batch_size]
+                
+                try:
+                    print(f"📦 Processando lote de pendentes {batch_num}/{total_batches}...")
+                    
+                    # Verifica se o serviço de pendentes tem método para lotes
+                    if hasattr(pendente_service, 'adicionar_transacoes_lote'):
+                        pendente_service.adicionar_transacoes_lote(batch)
+                    else:
+                        # Fallback: adiciona um por um
+                        for transacao in batch:
+                            pendente_service.adicionar_pendente(
+                                transacao_id=transacao.get('id'),
+                                tipo=transacao.get('tipo'),
+                                data=transacao.get('data'),
+                                descricao=transacao.get('descricao'),
+                                valor=transacao.get('valor'),
+                                tipo_movimento=transacao.get('tipo_movimento'),
+                                fonte=transacao.get('fonte'),
+                                hash_transacao=transacao.get('hash'),
+                                observacoes=transacao.get('observacoes', '')
+                            )
+                    
+                    print(f"✅ Lote de pendentes {batch_num}/{total_batches} processado")
+                    
+                except Exception as e:
+                    print(f"❌ Erro ao processar lote de pendentes {batch_num}: {e}")
+                    continue
+
             self.pendentes_adicionadas = len(novas_pendentes)
-            self._salvar_json('data/pendentes.json', pendentes)
+            print(f"📋 Processamento de pendentes concluído: {self.pendentes_adicionadas} adicionadas")
+        else:
+            print("📋 Nenhuma transação nova para pendentes")
+            self.pendentes_adicionadas = 0
 
     def _carregar_json(self, caminho):
-        """
-        Carrega arquivo JSON ou retorna lista vazia se não existir
-        """
+        """Carrega arquivo JSON ou retorna lista vazia se não existir"""
         try:
             with open(caminho, 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -375,8 +494,6 @@ class ImportadorTransacoes:
             return []
 
     def _salvar_json(self, caminho, dados):
-        """
-        Salva dados em arquivo JSON com formatação
-        """
+        """Salva dados em arquivo JSON com formatação"""
         with open(caminho, 'w', encoding='utf-8') as f:
             json.dump(dados, f, ensure_ascii=False, indent=2)
