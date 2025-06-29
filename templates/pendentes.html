@@ -165,37 +165,22 @@
                             <i class="bi bi-people me-1"></i>
                             Dono(s) do Custo
                         </label>
-                        <div class="row">
-                            <div class="col-md-4 col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="jean" data-pessoa="Jean">
-                                    <label class="form-check-label" for="jean">Jean</label>
+                        <div class="row" id="pessoas-donos-container">
+                            {% if pessoas %}
+                                {% for pessoa in pessoas %}
+                                <div class="col-md-4 col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input pessoa-checkbox" type="checkbox" 
+                                               id="pessoa-{{ loop.index }}" data-pessoa="{{ pessoa }}">
+                                        <label class="form-check-label" for="pessoa-{{ loop.index }}">{{ pessoa }}</label>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4 col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="joao-rafael" data-pessoa="João Rafael">
-                                    <label class="form-check-label" for="joao-rafael">João Rafael</label>
+                                {% endfor %}
+                            {% else %}
+                                <div class="col-12">
+                                    <p class="text-muted">Nenhuma pessoa cadastrada. <a href="/dados" target="_blank">Clique aqui para gerenciar pessoas</a>.</p>
                                 </div>
-                            </div>
-                            <div class="col-md-4 col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="juliano" data-pessoa="Juliano">
-                                    <label class="form-check-label" for="juliano">Juliano</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="tati" data-pessoa="Tati">
-                                    <label class="form-check-label" for="tati">Tati</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-6">
-                                <div class="form-check">
-                                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="joao-batista" data-pessoa="João Batista">
-                                    <label class="form-check-label" for="joao-batista">João Batista</label>
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -219,11 +204,11 @@
                         </label>
                         <select class="form-select" id="pago-por" required>
                             <option value="" disabled selected>Selecione quem pagou</option>
-                            <option value="Jean">Jean</option>
-                            <option value="João Rafael">João Rafael</option>
-                            <option value="Juliano">Juliano</option>
-                            <option value="Tati">Tati</option>
-                             <option value="João Batista">João Batista</option>
+                            {% if pessoas %}
+                                {% for pessoa in pessoas %}
+                                    <option value="{{ pessoa }}">{{ pessoa }}</option>
+                                {% endfor %}
+                            {% endif %}
                         </select>
                     </div>
 

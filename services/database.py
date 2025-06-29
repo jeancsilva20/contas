@@ -5,9 +5,33 @@ import json
 
 class DatabaseService:
     def __init__(self):
-        # Usa o Transaction Pooler do Supabase (melhor para aplicações web)
-        self.database_url = "postgresql://contas:b62OYudl5h3htXjydOW4s3owWcxOYj7v@dpg-d1gccgffte5s738fk4n0-a/contas_xltx"
-    
+        # URLs de conexão PostgreSQL no Render
+        self.database_url_internal = "postgresql://contas:b62OYudl5h3htXjydOW4s3owWcxOYj7v@dpg-d1gccgffte5s738fk4n0-a/contas_xltx"
+        self.database_url_external = "postgresql://contas:b62OYudl5h3htXjydOW4s3owWcxOYj7v@dpg-d1gccgffte5s738fk4n0-a.oregon-postgres.render.com/contas_xltx"
+        self.database_url = self._get_working_database_url()
+
+    def _get_working_database_url(self):
+        """Testa as URLs de conexão e retorna a que funciona"""
+        urls_to_test = [
+            ("interna", self.database_url_internal),
+            ("externa", self.database_url_external)
+        ]
+        
+        for tipo, url in urls_to_test:
+            try:
+                print(f"🔍 Testando conexão {tipo}...")
+                conn = psycopg2.connect(url, cursor_factory=RealDictCursor)
+                conn.close()
+                print(f"✅ Conexão {tipo} funcionando!")
+                return url
+            except Exception as e:
+                print(f"❌ Conexão {tipo} falhou: {e}")
+                continue
+        
+        # Se nenhuma URL funcionar, usa a externa como fallback
+        print("⚠️ Nenhuma conexão funcionou, usando URL externa como fallback")
+        return self.database_url_external
+
     def get_connection(self):
         """Retorna conexão com o banco de dados"""
         try:

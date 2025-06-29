@@ -16,3 +16,4 @@ six==1.16.0
 msoffcrypto-tool==5.0.1
 cryptography>=41.0.0,<43.0.0
 gunicorn==21.2.0
+psycopg2-binary

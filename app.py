@@ -23,8 +23,81 @@ atexit.register(cleanup_temp_files)
 from flask import Flask, render_template, request, jsonify, session, redirect
 import os
 
+def inicializar_banco_dados():
+    """Inicializa as tabelas do banco de dados se elas não existirem"""
+    try:
+        print("🚀 Verificando e criando estrutura do banco de dados...")
+        print("=" * 60)
+        
+        from services.database import FonteService, PendenteService, TransacaoService, RevisaoService, PessoaService
+        
+        # Teste inicial de conexão e escolha de URL
+        print("🔌 Testando conexões com banco de dados...")
+        db_service = FonteService().db  # Usa o DatabaseService para testar conexão
+        
+        # Criar todas as tabelas
+        print("\n📂 Criando tabela de fontes...")
+        fonte_service = FonteService()
+        fonte_service.criar_tabela_fontes()
+        
+        print("⏳ Criando tabela de pendentes...")
+        pendente_service = PendenteService()
+        pendente_service.criar_tabela_pendentes()
+        
+        print("💰 Criando tabela de transações...")
+        transacao_service = TransacaoService()
+        transacao_service.criar_tabela_transacoes()
+        
+        print("📝 Criando tabela de revisões...")
+        revisao_service = RevisaoService()
+        revisao_service.criar_tabela_revisoes()
+        
+        print("👥 Criando tabela de pessoas...")
+        pessoa_service = PessoaService()
+        pessoa_service.criar_tabela_pessoas()
+        
+        # Adicionar fontes padrão se não existirem
+        print("\n📋 Adicionando fontes padrão...")
+        fontes_padrao = ["Cartão C6", "Conta C6", "Cartão XP", "Conta XP", "Cartão C6 Tati", "Manual"]
+        fontes_adicionadas = 0
+        for fonte in fontes_padrao:
+            if not fonte_service.fonte_existe(fonte):
+                fonte_service.adicionar_fonte(fonte)
+                print(f"   + {fonte}")
+                fontes_adicionadas += 1
+        
+        if fontes_adicionadas == 0:
+            print("   ✓ Todas as fontes padrão já existem")
+        
+        # Adicionar pessoas padrão se não existirem
+        print("\n👥 Adicionando pessoas padrão...")
+        pessoas_padrao = ["Jean", "João Batista", "João Rafael", "Juliano", "Tati"]
+        pessoas_adicionadas = 0
+        for pessoa in pessoas_padrao:
+            if not pessoa_service.pessoa_existe(pessoa):
+                pessoa_service.adicionar_pessoa(pessoa)
+                print(f"   + {pessoa}")
+                pessoas_adicionadas += 1
+        
+        if pessoas_adicionadas == 0:
+            print("   ✓ Todas as pessoas padrão já existem")
+        
+        print("\n" + "=" * 60)
+        print("✅ Banco de dados inicializado com sucesso!")
+        print(f"🔗 Usando conexão: {db_service.database_url}")
+        return True
+        
+    except Exception as e:
+        print(f"\n❌ Erro ao inicializar banco de dados: {e}")
+        print("💡 Verifique se as credenciais do banco estão corretas")
+        return False
+
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_aqui_123456789'  # Necessário para sessões
+
+# Inicializar banco de dados na inicialização da aplicação
+with app.app_context():
+    inicializar_banco_dados()
 
 
 @app.route('/')
@@ -64,11 +137,15 @@ def fontes_content():
         fontes = fonte_service.listar_fontes()
 
         if not fontes:
+            print("⚠️ Nenhuma fonte encontrada, tentando migração...")
             if fonte_service.migrar_fontes_json():
                 fontes = fonte_service.listar_fontes()
+                print(f"✅ {len(fontes)} fontes migradas")
 
+        print(f"📋 Carregando {len(fontes)} fontes")
         return render_template('fontes_content.html', fontes=fontes)
     except Exception as e:
+        print(f"❌ Erro ao carregar fontes: {str(e)}")
         return f"Erro ao carregar fontes: {str(e)}", 500
 
 
@@ -83,11 +160,15 @@ def pessoas_content():
         pessoas = pessoa_service.listar_pessoas()
 
         if not pessoas:
+            print("⚠️ Nenhuma pessoa encontrada, tentando migração...")
             if pessoa_service.migrar_pessoas_json():
                 pessoas = pessoa_service.listar_pessoas()
+                print(f"✅ {len(pessoas)} pessoas migradas")
 
+        print(f"👥 Carregando {len(pessoas)} pessoas")
         return render_template('pessoas_content.html', pessoas=pessoas)
     except Exception as e:
+        print(f"❌ Erro ao carregar pessoas: {str(e)}")
         return f"Erro ao carregar pessoas: {str(e)}", 500
 
 
@@ -303,18 +384,22 @@ def pendentes():
         pendente_service = PendenteService()
         pessoa_service = PessoaService()
 
+        print("🔄 Carregando pendentes do banco...")
         pendentes_data = pendente_service.listar_pendentes()
+        print(f"📋 Encontrados {len(pendentes_data)} pendentes")
 
         # Obtém lista de pessoas do banco
         pessoas_lista = pessoa_service.listar_pessoas()
 
         # Se não há pessoas no banco, faz migração inicial
         if not pessoas_lista:
+            print("⚠️ Nenhuma pessoa encontrada, tentando migração...")
             if pessoa_service.migrar_pessoas_json():
                 pessoas_lista = pessoa_service.listar_pessoas()
+                print(f"✅ {len(pessoas_lista)} pessoas migradas")
 
     except Exception as e:
-        print(f"Erro ao carregar pendentes: {e}")
+        print(f"❌ Erro ao carregar pendentes: {e}")
         pendentes_data = []
         pessoas_lista = []
 
@@ -977,9 +1062,9 @@ def salvar_nova_despesa():
     Salva nova despesa manual diretamente nas revisões
     """
     try:
-        import json
         from datetime import datetime
         from utils.hash import gerar_hash_transacao
+        from services.database import TransacaoService, RevisaoService
 
         dados = request.get_json()
 
@@ -1021,62 +1106,50 @@ def salvar_nova_despesa():
                                               dados['descricao'], valor,
                                               'manual')
 
-        # Criar transação
+        # Inicializa serviços
+        transacao_service = TransacaoService()
+        revisao_service = RevisaoService()
+
+        # Adicionar transação no banco
         timestamp = int(datetime.now().timestamp())
-        transacao = {
-            'id': f"manual_{timestamp}",
-            'tipo': 'manual',
-            'data': dados['data'],
-            'descricao': dados['descricao'],
-            'valor': valor,
-            'tipo_movimento': 'entrada' if valor < 0 else 'saida',
-            'fonte': 'Manual',
-            'hash': hash_transacao,
-            'observacoes': dados.get('observacoes', '')
-        }
+        transacao_id = f"manual_{timestamp}"
+        
+        transacao_service.adicionar_transacao(
+            transacao_id=transacao_id,
+            tipo='manual',
+            data=dados['data'],
+            descricao=dados['descricao'],
+            valor=valor,
+            tipo_movimento='entrada' if valor < 0 else 'saida',
+            fonte='Manual',
+            hash_transacao=hash_transacao,
+            observacoes=dados.get('observacoes', '')
+        )
 
         # Criar estrutura de quitação individual para cada pessoa
         quitacao_individual = {}
+        pago_por = dados.get('pago_por', '')
+
         for pessoa in dados['donos'].keys():
-            quitacao_individual[pessoa] = False
+            # Se a pessoa que deve é a mesma que pagou, marca como quitado automaticamente
+            if pessoa == pago_por:
+                quitacao_individual[pessoa] = True
+            else:
+                quitacao_individual[pessoa] = False
 
-        # Criar revisão
-        revisao = {
-            'hash': hash_transacao,
-            'id_original': transacao['id'],
-            'nova_descricao': dados['descricao'],
-            'donos': dados['donos'],
-            'comentarios': dados.get('comentarios', ''),
-            'pago_por': dados.get('pago_por', ''),
-            'quitado': False,  # Mantém para compatibilidade
-            'quitacao_individual': quitacao_individual,
-            'data_revisao': datetime.now().isoformat(),
-            'revisado_por': 'Manual'
-        }
-
-        # Carregar e salvar transações
-        try:
-            with open('data/transacoes.json', 'r', encoding='utf-8') as f:
-                transacoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            transacoes = []
-
-        transacoes.append(transacao)
-
-        with open('data/transacoes.json', 'w', encoding='utf-8') as f:
-            json.dump(transacoes, f, ensure_ascii=False, indent=2)
-
-        # Carregar e salvar revisões
-        try:
-            with open('data/revisoes.json', 'r', encoding='utf-8') as f:
-                revisoes = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            revisoes = []
-
-        revisoes.append(revisao)
-
-        with open('data/revisoes.json', 'w', encoding='utf-8') as f:
-            json.dump(revisoes, f, ensure_ascii=False, indent=2)
+        # Adicionar revisão no banco
+        revisao_service.adicionar_revisao(
+            hash_transacao=hash_transacao,
+            id_original=transacao_id,
+            nova_descricao=dados['descricao'],
+            donos=dados['donos'],
+            comentarios=dados.get('comentarios', ''),
+            pago_por=pago_por,
+            quitado=False,  # Por padrão, todas as contas começam não quitadas
+            quitacao_individual=quitacao_individual,
+            data_revisao=datetime.now(),
+            revisado_por='Manual'
+        )
 
         return jsonify({
             'success': True,
@@ -1104,6 +1177,8 @@ def listagens():
         data_inicio = request.args.get('data_inicio', '')
         data_fim = request.args.get('data_fim', '')
         responsavel = request.args.get('responsavel', '')
+        status_filtro = request.args.get('status', '')
+        pago_por_filtro = request.args.get('pago_por', '')
 
         # Carrega revisões do banco
         from services.database import RevisaoService, TransacaoService
@@ -1119,6 +1194,10 @@ def listagens():
         # Lista para armazenar dados processados
         listagem_dados = []
 
+        # Obtém lista de pessoas únicas para os filtros
+        pessoas_uniques = set()
+        responsaveis_unicos = set()
+
         # Processa cada revisão
         for revisao in revisoes:
             transacao = transacoes_map.get(revisao['hash'])
@@ -1132,6 +1211,15 @@ def listagens():
             if data_fim and data_str > data_fim:
                 continue
 
+            # Aplica filtro de pago_por
+            pago_por_revisao = revisao.get('pago_por', '')
+            if pago_por_filtro and pago_por_revisao != pago_por_filtro:
+                continue
+
+            # Adiciona à lista de pessoas únicas
+            if pago_por_revisao:
+                pessoas_uniques.add(pago_por_revisao)
+
             # Valor total da transação (converte Decimal para float)
             valor_total = float(abs(transacao['valor']))
             if transacao.get('tipo_movimento') == 'entrada':
@@ -1140,15 +1228,24 @@ def listagens():
             # Distribui por responsável
             donos = revisao.get('donos', {})
             for pessoa, percentual in donos.items():
+                # Adiciona à lista de responsáveis únicos
+                responsaveis_unicos.add(pessoa)
+
                 # Aplica filtro de responsável se especificado
                 if responsavel and pessoa != responsavel:
                     continue
 
-                valor_rateado = valor_total * (percentual / 100)
-
                 # Verifica status individual de quitação
                 quitacao_individual = revisao.get('quitacao_individual', {})
                 status_individual = quitacao_individual.get(pessoa, False)
+
+                # Aplica filtro de status
+                if status_filtro == 'pendente' and status_individual:
+                    continue
+                if status_filtro == 'quitado' and not status_individual:
+                    continue
+
+                valor_rateado = valor_total * (percentual / 100)
 
                 item = {
                     'data':
@@ -1172,7 +1269,7 @@ def listagens():
                     'tipo_movimento':
                     transacao.get('tipo_movimento', 'saida'),
                     'pago_por':
-                    revisao.get('pago_por', ''),
+                    pago_por_revisao,
                     'quitado':
                     status_individual
                 }
@@ -1183,15 +1280,13 @@ def listagens():
         listagem_dados.sort(key=lambda x: (x['data'], x['responsavel']),
                             reverse=True)
 
-        # Obter lista de responsáveis únicos para o filtro
-        responsaveis_unicos = set()
-        for revisao in revisoes:
-            donos = revisao.get('donos', {})
-            responsaveis_unicos.update(donos.keys())
+        # Converte sets para listas ordenadas
+        pessoas_uniques = sorted(list(pessoas_uniques))
         responsaveis_unicos = sorted(list(responsaveis_unicos))
 
         return render_template('listagens.html',
                                listagem_dados=listagem_dados,
+                               pessoas_uniques=pessoas_uniques,
                                responsaveis_unicos=responsaveis_unicos,
                                data_inicio=data_inicio,
                                data_fim=data_fim,
@@ -1218,6 +1313,8 @@ def exportar_listagem_csv():
         data_inicio = request.args.get('data_inicio', '')
         data_fim = request.args.get('data_fim', '')
         responsavel = request.args.get('responsavel', '')
+        status_filtro = request.args.get('status', '')
+        pago_por_filtro = request.args.get('pago_por', '')
 
         # Carrega revisões do banco
         from services.database import RevisaoService, TransacaoService
@@ -1245,22 +1342,33 @@ def exportar_listagem_csv():
             if data_fim and data_str > data_fim:
                 continue
 
-            valor_total = abs(transacao['valor'])
+            # Aplica filtro de pago_por
+            pago_por_revisao = revisao.get('pago_por', '')
+            if pago_por_filtro and pago_por_revisao != pago_por_filtro:
+                continue
+
+            valor_total = float(abs(transacao['valor']))
             if transacao.get('tipo_movimento') == 'entrada':
                 valor_total = -valor_total
 
             donos = revisao.get('donos', {})
 
             for pessoa, percentual in donos.items():
-                # Aplica filtro de pessoa se especificado
+                # Aplica filtro de responsável se especificado
                 if responsavel and pessoa != responsavel:
                     continue
-
-                valor_rateado = valor_total * (percentual / 100)
 
                 # Verifica status individual
                 quitacao_individual = revisao.get('quitacao_individual', {})
                 status_individual = quitacao_individual.get(pessoa, False)
+
+                # Aplica filtro de status
+                if status_filtro == 'pendente' and status_individual:
+                    continue
+                if status_filtro == 'quitado' and not status_individual:
+                    continue
+
+                valor_rateado = valor_total * (float(percentual) / 100)
 
                 dados_csv.append({
                     'Data':
@@ -1268,7 +1376,7 @@ def exportar_listagem_csv():
                     'Descrição':
                     revisao.get('nova_descricao', transacao['descricao']),
                     'Valor':
-                    f"R$ {transacao['valor']:.2f}",
+                    f"R$ {float(transacao['valor']):.2f}",
                     'Fonte':
                     transacao.get('fonte', ''),
                     'Observações':
@@ -1276,13 +1384,13 @@ def exportar_listagem_csv():
                     'Valor Total':
                     f"R$ {valor_total:.2f}",
                     '% Rateio':
-                    f"{percentual}%",
+                    f"{float(percentual):.1f}%",
                     'Valor Rateado':
                     f"R$ {valor_rateado:.2f}",
                     'Responsável':
                     pessoa,
                     'Pago Por':
-                    revisao.get('pago_por', ''),
+                    pago_por_revisao,
                     'Status Individual':
                     'Quitado' if status_individual else 'Pendente'
                 })
@@ -1311,6 +1419,10 @@ def exportar_listagem_csv():
         nome_arquivo = f"listagem_{timestamp}"
         if responsavel:
             nome_arquivo += f"_{responsavel.replace(' ', '_')}"
+        if status_filtro:
+            nome_arquivo += f"_{status_filtro}"
+        if pago_por_filtro:
+            nome_arquivo += f"_{pago_por_filtro.replace(' ', '_')}"
         nome_arquivo += ".csv"
 
         # Retorna CSV como download
@@ -2097,4 +2209,6 @@ def limpar_base_dados():
         })
 
 
-cleanup_temp_files()
+if __name__ == '__main__':
+    cleanup_temp_files()
+    app.run(host='0.0.0.0', port=5000, debug=True)

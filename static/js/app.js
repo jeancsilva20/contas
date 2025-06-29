@@ -306,6 +306,97 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Função para salvar aba ativa no localStorage
+function salvarAbaAtiva(tipo) {
+    localStorage.setItem('dadosAbaAtiva', tipo);
+}
+
+// Função para recuperar aba ativa do localStorage
+function recuperarAbaAtiva() {
+    return localStorage.getItem('dadosAbaAtiva') || 'upload';
+}
+
+// Função para ativar uma aba específica
+function ativarAba(tipo) {
+    // Desativar todas as abas
+    document.querySelectorAll('#dadosTabs .nav-link').forEach(tab => {
+        tab.classList.remove('active');
+        tab.setAttribute('aria-selected', 'false');
+    });
+    
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('show', 'active');
+    });
+    
+    // Ativar a aba específica
+    const tabButton = document.getElementById(`${tipo}-tab`);
+    const tabPane = document.getElementById(`${tipo}-pane`);
+    
+    if (tabButton && tabPane) {
+        tabButton.classList.add('active');
+        tabButton.setAttribute('aria-selected', 'true');
+        
+        tabPane.classList.add('show', 'active');
+        
+        // Salvar no localStorage
+        salvarAbaAtiva(tipo);
+    }
+}
+
+// Função para carregar conteúdo via AJAX
+function carregarConteudo(tipo) {
+    const urls = {
+        'fontes': '/fontes_content',
+        'pessoas': '/pessoas_content',
+        'limpar_base': '/limpar_base_content',
+        'upload': '/upload_content'
+    };
+    
+    const url = urls[tipo];
+    if (!url) {
+        console.error('Tipo de conteúdo não encontrado:', tipo);
+        return;
+    }
+    
+    // Salvar aba ativa
+    salvarAbaAtiva(tipo);
+    
+    showLoading('Atualizando dados...');
+    
+    const contentDiv = `#${tipo}-content`;
+    
+    // Limpa o cache de carregamento para forçar recarregamento
+    $(contentDiv).removeData('loaded');
+    
+    // Carrega conteúdo via AJAX
+    $.get(url)
+        .done(function(data) {
+            $(contentDiv).html(data);
+            $(contentDiv).data('loaded', true);
+            hideLoading();
+            
+            // Ativa a aba correta se não estiver ativa
+            if (!$(`#${tipo}-tab`).hasClass('active')) {
+                ativarAba(tipo);
+            }
+            
+            Notiflix.Notify.success('Dados atualizados com sucesso!');
+        })
+        .fail(function() {
+            hideLoading();
+            $(contentDiv).html(`
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Erro ao carregar conteúdo. Tente novamente.
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="carregarConteudo('${tipo}')">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Tentar Novamente
+                    </button>
+                </div>
+            `);
+            Notiflix.Notify.failure('Erro ao atualizar dados');
+        });
+}
+
 // Exportar funções para uso global
 window.AppUtils = {
     initDataTable,
@@ -324,3 +415,6 @@ window.AppUtils = {
     exportToCSV,
     debounce
 };
+
+// Disponibilizar carregarConteudo globalmente
+window.carregarConteudo = carregarConteudo;

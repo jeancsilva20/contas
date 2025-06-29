@@ -1,4 +1,3 @@
-
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h6 class="mb-0">
         <i class="bi bi-people me-2"></i>
@@ -107,71 +106,104 @@
 </div>
 
 <script>
-function salvarPessoa() {
-    const nome = $('#nomePessoa').val().trim();
-    
+async function salvarPessoa() {
+    const nomeInput = document.getElementById('nomePessoa');
+    const nome = nomeInput.value.trim();
+
     if (!nome) {
         Notiflix.Notify.warning('Nome da pessoa é obrigatório');
         return;
     }
-    
-    $.ajax({
-        url: '/salvar_pessoa',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ nome: nome }),
-        success: function(response) {
-            if (response.success) {
-                Notiflix.Notify.success(response.message);
-                $('#modalNovaPessoa').modal('hide');
-                $('#formNovaPessoa')[0].reset();
-                window.carregarConteudo('pessoas');
-            } else {
-                Notiflix.Notify.failure(response.message);
-            }
-        },
-        error: function() {
-            Notiflix.Notify.failure('Erro ao salvar pessoa');
+
+    try {
+        Notiflix.Loading.circle('Salvando pessoa...');
+
+        const response = await fetch('/salvar_pessoa', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nome: nome })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Notiflix.Notify.success(data.message);
+
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalNovaPessoa'));
+            if (modal) modal.hide();
+
+            // Limpar formulário
+            document.getElementById('formNovaPessoa').reset();
+
+            // Forçar reload da página
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 500);
+        } else {
+            Notiflix.Notify.failure(data.message);
         }
-    });
+    } catch (error) {
+        Notiflix.Notify.failure('Erro ao salvar pessoa: ' + error.message);
+    } finally {
+        Notiflix.Loading.remove();
+    }
 }
 
 function editarPessoa(nome) {
-    $('#pessoaAntigaNome').val(nome);
-    $('#novoNomePessoa').val(nome);
-    $('#modalEditarPessoa').modal('show');
+    document.getElementById('pessoaAntigaNome').value = nome;
+    document.getElementById('novoNomePessoa').value = nome;
+
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarPessoa'));
+    modal.show();
 }
 
-function salvarEdicaoPessoa() {
-    const nomeAntigo = $('#pessoaAntigaNome').val();
-    const nomeNovo = $('#novoNomePessoa').val().trim();
-    
+async function salvarEdicaoPessoa() {
+    const nomeAntigo = document.getElementById('pessoaAntigaNome').value;
+    const nomeNovo = document.getElementById('novoNomePessoa').value.trim();
+
     if (!nomeNovo) {
         Notiflix.Notify.warning('Nome da pessoa é obrigatório');
         return;
     }
-    
-    $.ajax({
-        url: '/editar_pessoa',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ 
-            nome_antigo: nomeAntigo,
-            nome_novo: nomeNovo 
-        }),
-        success: function(response) {
-            if (response.success) {
-                Notiflix.Notify.success(response.message);
-                $('#modalEditarPessoa').modal('hide');
-                window.carregarConteudo('pessoas');
-            } else {
-                Notiflix.Notify.failure(response.message);
-            }
-        },
-        error: function() {
-            Notiflix.Notify.failure('Erro ao editar pessoa');
+
+    try {
+        Notiflix.Loading.circle('Salvando alterações...');
+
+        const response = await fetch('/editar_pessoa', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                nome_antigo: nomeAntigo,
+                nome_novo: nomeNovo 
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Notiflix.Notify.success(data.message);
+
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarPessoa'));
+            if (modal) modal.hide();
+
+            // Forçar reload da página
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 500);
+        } else {
+            Notiflix.Notify.failure(data.message);
         }
-    });
+    } catch (error) {
+        Notiflix.Notify.failure('Erro ao editar pessoa: ' + error.message);
+    } finally {
+        Notiflix.Loading.remove();
+    }
 }
 
 function excluirPessoa(nome) {
@@ -180,24 +212,35 @@ function excluirPessoa(nome) {
         `Tem certeza que deseja excluir a pessoa "${nome}"?`,
         'Sim, Excluir',
         'Cancelar',
-        function() {
-            $.ajax({
-                url: '/excluir_pessoa',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ nome: nome }),
-                success: function(response) {
-                    if (response.success) {
-                        Notiflix.Notify.success(response.message);
-                        window.carregarConteudo('pessoas');
-                    } else {
-                        Notiflix.Notify.failure(response.message);
-                    }
-                },
-                error: function() {
-                    Notiflix.Notify.failure('Erro ao excluir pessoa');
+        async function() {
+            try {
+                Notiflix.Loading.circle('Excluindo pessoa...');
+
+                const response = await fetch('/excluir_pessoa', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nome: nome })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Notiflix.Notify.success(data.message);
+
+                    // Forçar reload da página
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 500);
+                } else {
+                    Notiflix.Notify.failure(data.message);
                 }
-            });
+            } catch (error) {
+                Notiflix.Notify.failure('Erro ao excluir pessoa: ' + error.message);
+            } finally {
+                Notiflix.Loading.remove();
+            }
         }
     );
 }

@@ -73,18 +73,20 @@
                             </div>
                             <div class="card-body">
                                 <div class="row mb-3">
-                                    <div class="col-12">
-                                        <label class="form-label">Pessoas Responsáveis *</label>
-                                        <div id="pessoas-container">
-                                            {% if pessoas_existentes %}
-                                                {% for pessoa in pessoas_existentes %}
-                                                <div class="form-check form-check-inline">
-                                                    <input class="form-check-input pessoa-checkbox" type="checkbox" id="pessoa_{{ loop.index }}" value="{{ pessoa }}">
-                                                    <label class="form-check-label" for="pessoa_{{ loop.index }}">{{ pessoa }}</label>
-                                                </div>
-                                                {% endfor %}
-                                            {% endif %}
+                            <div class="col-12">
+                                <label class="form-label">Pessoas Responsáveis *</label>
+                                <div id="pessoas-container">
+                                    {% if pessoas_existentes %}
+                                        {% for pessoa in pessoas_existentes %}
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input pessoa-checkbox" type="checkbox" id="pessoa_{{ loop.index }}" value="{{ pessoa }}">
+                                            <label class="form-check-label" for="pessoa_{{ loop.index }}">{{ pessoa }}</label>
                                         </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-muted">Nenhuma pessoa cadastrada. <a href="/dados" target="_blank">Clique aqui para gerenciar pessoas</a>.</p>
+                                    {% endif %}
+                                </div>
                                         <div class="mt-2">
                                             <div class="input-group" style="max-width: 300px;">
                                                 <input type="text" class="form-control form-control-sm" id="nova-pessoa" placeholder="Nova pessoa">

@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Gerenciar Dados - Sistema de Gestão de Contas{% endblock %}
@@ -83,30 +82,41 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // Carregar conteúdo inicial (Upload)
-    carregarConteudo('upload');
-    
+    // Recuperar aba ativa do localStorage ou usar 'upload' como padrão
+    const abaAtiva = recuperarAbaAtiva();
+
+    // Ativar a aba correta
+    ativarAba(abaAtiva);
+
+    // Carregar conteúdo da aba ativa
+    carregarConteudoAjax(abaAtiva);
+
     // Handler para mudança de tabs
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         var targetTab = e.target.getAttribute('data-bs-target');
         var tabName = targetTab.replace('#', '').replace('-pane', '');
-        carregarConteudo(tabName);
+
+        // Salvar aba ativa
+        salvarAbaAtiva(tabName);
+
+        // Carregar conteúdo se necessário
+        carregarConteudoAjax(tabName);
     });
-    
-    function carregarConteudo(tab) {
+
+    // Função para carregar conteúdo via AJAX (sem reload da página)
+    function carregarConteudoAjax(tab) {
         var contentDiv = '#' + tab + '-content';
-        var url = '/' + tab;
-        
+        var url = '/' + tab + '_content';
+
         // Correção para a URL da tab limpar
-        if (tab === 'limpar') {
-            url = '/limpar_base';
+        if (tab === 'limpar' || tab === 'limpar_base') {
+            url = '/limpar_base_content';
+            contentDiv = '#limpar-content';
         }
-        
-        // Se o conteúdo já foi carregado, não recarrega
-        if ($(contentDiv).data('loaded')) {
-            return;
-        }
-        
+
+        // Força recarregamento sempre para dados atualizados
+        $(contentDiv).removeData('loaded');
+
         // Mostra loading
         $(contentDiv).html(`
             <div class="text-center py-4">
@@ -116,80 +126,52 @@ $(document).ready(function() {
                 <p class="mt-2">Carregando conteúdo...</p>
             </div>
         `);
-        
+
         // Carrega conteúdo via AJAX
-        $.get(url + '_content')
+        $.get(url)
             .done(function(data) {
                 $(contentDiv).html(data);
                 $(contentDiv).data('loaded', true);
-                
-                // Reinicializa componentes específicos de cada tab
-                if (tab === 'upload') {
-                    inicializarUpload();
-                } else if (tab === 'fontes') {
-                    inicializarFontes();
-                } else if (tab === 'pessoas') {
-                    inicializarPessoas();
-                } else if (tab === 'limpar') {
-                    inicializarLimparBase();
-                }
             })
-            .fail(function() {
+            .fail(function(xhr, status, error) {
+                console.error('Erro ao carregar conteúdo:', status, error);
                 $(contentDiv).html(`
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger" role="alert">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        Erro ao carregar conteúdo. Tente novamente.
-                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="carregarConteudo('${tab}')">
-                            <i class="bi bi-arrow-clockwise"></i> Tentar Novamente
+                        Erro ao carregar conteúdo: ${status}. 
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="carregarConteudoAjax('${tab}')">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Tentar Novamente
                         </button>
                     </div>
                 `);
             });
     }
-    
-    // Funções para inicializar componentes específicos
-    function inicializarUpload() {
-        // Reinicializa funcionalidades do upload
-        if (typeof initializeUploadHandlers === 'function') {
-            initializeUploadHandlers();
-        }
+
+    function salvarAbaAtiva(tabName) {
+        localStorage.setItem('abaAtiva', tabName);
     }
-    
-    function inicializarFontes() {
-        // Reinicializa DataTable para fontes
-        if ($.fn.DataTable.isDataTable('#tabelaFontes')) {
-            $('#tabelaFontes').DataTable().destroy();
-        }
-        $('#tabelaFontes').DataTable({
-            responsive: true,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
-            }
-        });
+
+    function recuperarAbaAtiva() {
+        return localStorage.getItem('abaAtiva') || 'upload';
     }
-    
-    function inicializarPessoas() {
-        // Reinicializa DataTable para pessoas
-        if ($.fn.DataTable.isDataTable('#tabelaPessoas')) {
-            $('#tabelaPessoas').DataTable().destroy();
-        }
-        $('#tabelaPessoas').DataTable({
-            responsive: true,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
-            }
-        });
+
+    function ativarAba(tabName) {
+        // Mapear nomes de abas para IDs corretos
+        const tabMapping = {
+            'limpar_base': 'limpar',
+            'limpar': 'limpar'
+        };
+        
+        const actualTabName = tabMapping[tabName] || tabName;
+        
+        // Desativa a aba ativa atual
+        $('.nav-link.active').removeClass('active');
+        $('.tab-pane.show').removeClass('show active');
+
+        // Ativa a aba correta
+        $('#' + actualTabName + '-tab').addClass('active');
+        $('#' + actualTabName + '-pane').addClass('show active');
     }
-    
-    function inicializarLimparBase() {
-        // Funcionalidades específicas da tela de limpar base
-        if (typeof initializeLimparBase === 'function') {
-            initializeLimparBase();
-        }
-    }
-    
-    // Torna a função disponível globalmente para uso nos botões
-    window.carregarConteudo = carregarConteudo;
 });
 </script>
 {% endblock %}
@@ -201,22 +183,22 @@ $(document).ready(function() {
         margin-bottom: -1px;
         border: 1px solid transparent;
     }
-    
+
     .nav-tabs .nav-link:hover {
         border-color: var(--bs-gray-200) var(--bs-gray-200) var(--bs-border-color);
         background-color: var(--bs-gray-100);
     }
-    
+
     .nav-tabs .nav-link.active {
         background-color: white;
         border-color: var(--bs-gray-300) var(--bs-gray-300) white;
         color: var(--primary-color);
     }
-    
+
     .tab-content {
         min-height: 400px;
     }
-    
+
     .spinner-border {
         width: 2rem;
         height: 2rem;
